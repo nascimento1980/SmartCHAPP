@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const { Form, FormSubmission } = require('../models')
+const { Form, FormSubmission, CompanySetting } = require('../models')
 const EmailService = require('../services/EmailService')
 const path = require('path')
 const fs = require('fs')
@@ -14,9 +14,35 @@ router.get('/submissions/:id/pdf', async (req, res) => {
     if (!submission) return res.status(404).json({ error: 'Submissão não encontrada' })
     const form = await Form.findByPk(submission.form_id)
     if (!form) return res.status(404).json({ error: 'Formulário não encontrado' })
+    
+    // Buscar configurações da empresa
+    const companySettings = await CompanySetting.findAll({
+      where: {
+        setting_key: ['companyName', 'companyLegalName', 'companyEmail', 'companyPhone', 'companySite', 'companyPrimaryColor', 'companySecondaryColor', 'logoMime', 'logoData']
+      }
+    })
+    
+    const company = {}
+    let logoBuffer = null
+    companySettings.forEach(setting => {
+      if (setting.setting_key === 'logoData' && setting.setting_value) {
+        logoBuffer = Buffer.isBuffer(setting.setting_value) ? setting.setting_value : Buffer.from(setting.setting_value)
+      } else {
+        company[setting.setting_key] = setting.setting_value
+      }
+    })
+    
+    // Definir valores padrão se não existirem
+    company.companyName = company.companyName || 'Clean & Health'
+    company.companyPrimaryColor = company.companyPrimaryColor || '#00AA66'
+    company.companySecondaryColor = company.companySecondaryColor || '#003366'
 
     const PDFDocument = require('pdfkit')
-    const doc = new PDFDocument({ size: 'A4', margin: 40 })
+    const doc = new PDFDocument({ 
+      size: 'A4', 
+      margin: 40,
+      bufferPages: true
+    })
     res.setHeader('Content-Type', 'application/pdf')
     res.setHeader('Content-Disposition', `inline; filename="submission_${submission.id}.pdf"`)
     doc.pipe(res)
@@ -238,30 +264,65 @@ router.get('/submissions/:id/pdf', async (req, res) => {
 
     // Renderização especial para Hotelaria - CheckList Mestre de Diagnóstico e Viabilidade
     if (form.title && form.title.toLowerCase().includes('hotelaria')) {
-      // CABEÇALHO MINIMALISTA
-      doc.font('Helvetica-Bold').fontSize(18).fillColor('#00AA66')
-      doc.text('CLEAN & HEALTH', PAGE.left, PAGE.top, { align: 'left' })
+      // ====================================
+      // CABEÇALHO PADRÃO DA EMPRESA
+      // ====================================
       
-      doc.font('Helvetica').fontSize(8).fillColor('#666666')
-      doc.text('Solucoes Inteligentes em Higienizacao', PAGE.left, PAGE.top + 22)
+      // Fundo verde no topo (conforme imagem)
+      doc.save()
+      doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 60).fill()
+      doc.restore()
       
-      // Linha separadora
-      doc.strokeColor('#00AA66').lineWidth(1)
-      doc.moveTo(PAGE.left, PAGE.top + 35).lineTo(PAGE.right, PAGE.top + 35).stroke()
+      // Logo da empresa (se existir)
+      if (logoBuffer) {
+        try {
+          doc.image(logoBuffer, PAGE.left + 10, PAGE.top - 30, { width: 120, height: 40, fit: [120, 40] })
+        } catch (err) {
+          // Se falhar, usar texto
+          doc.font('Helvetica-Bold').fontSize(16).fillColor('#FFFFFF')
+          doc.text(company.companyName, PAGE.left + 10, PAGE.top - 20)
+        }
+      } else {
+        // Sem logo, usar nome da empresa em branco
+        doc.font('Helvetica-Bold').fontSize(16).fillColor('#FFFFFF')
+        doc.text(company.companyName.toUpperCase(), PAGE.left + 10, PAGE.top - 20)
+      }
+      
+      // Informações de contato no cabeçalho
+      doc.font('Helvetica').fontSize(7).fillColor('#FFFFFF')
+      let contactY = PAGE.top - 25
+      if (company.companyPhone) {
+        doc.text(company.companyPhone, PAGE.right - 120, contactY, { width: 110, align: 'right' })
+        contactY += 10
+      }
+      if (company.companyEmail) {
+        doc.text(company.companyEmail, PAGE.right - 120, contactY, { width: 110, align: 'right' })
+        contactY += 10
+      }
+      if (company.companySite) {
+        doc.text(company.companySite, PAGE.right - 120, contactY, { width: 110, align: 'right' })
+      }
+      
+      // Área branca abaixo do cabeçalho
+      doc.y = PAGE.top + 30
       
       // Título do documento
-      doc.font('Helvetica-Bold').fontSize(14).fillColor('#333333')
-      doc.text('CHECKLIST MESTRE DE DIAGNOSTICO E VIABILIDADE', PAGE.left, PAGE.top + 42, { align: 'center' })
+      doc.font('Helvetica-Bold').fontSize(14).fillColor(company.companySecondaryColor)
+      doc.text('CHECKLIST MESTRE DE DIAGNOSTICO E VIABILIDADE', PAGE.left, doc.y, { align: 'center' })
       
-      doc.font('Helvetica').fontSize(10).fillColor('#666666')
-      doc.text('Setor: Hotelaria', PAGE.left, PAGE.top + 60, { align: 'center' })
+      doc.font('Helvetica').fontSize(11).fillColor('#666666')
+      doc.text('Setor: Hotelaria', PAGE.left, doc.y + 20, { align: 'center' })
       
-      // Informações do documento
+      // Linha separadora
+      doc.strokeColor(company.companyPrimaryColor).lineWidth(1)
+      doc.moveTo(PAGE.left, doc.y + 35).lineTo(PAGE.right, doc.y + 35).stroke()
+      
+      // Data de emissão
       doc.fontSize(8).fillColor('#999999')
-      doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, PAGE.left, PAGE.top + 75, { align: 'right' })
+      doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, PAGE.left, doc.y + 40, { align: 'right' })
       
       doc.fillColor('#000000').font('Helvetica').fontSize(10)
-      doc.y = PAGE.top + 95
+      doc.y = doc.y + 55
 
       // Informações do Hotel
       drawSectionTitle('INFORMAÇÕES DO ESTABELECIMENTO')
@@ -320,16 +381,29 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       setores.forEach(({ titulo, icone, prefix }, index) => {
         doc.addPage()
         
-        // CABEÇALHO MINIMALISTA DE SETOR
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('#333333')
-        doc.text(`${index + 1}. ${titulo}`, PAGE.left, PAGE.top)
+        // Repetir cabeçalho verde em todas as páginas
+        doc.save()
+        doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 50).fill()
+        doc.restore()
         
-        // Linha separadora
-        doc.strokeColor('#CCCCCC').lineWidth(0.5)
-        doc.moveTo(PAGE.left, PAGE.top + 18).lineTo(PAGE.right, PAGE.top + 18).stroke()
+        if (logoBuffer) {
+          try {
+            doc.image(logoBuffer, PAGE.left + 10, PAGE.top - 30, { width: 100, height: 35, fit: [100, 35] })
+          } catch (err) {
+            doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
+            doc.text(company.companyName, PAGE.left + 10, PAGE.top - 20)
+          }
+        } else {
+          doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
+          doc.text(company.companyName.toUpperCase(), PAGE.left + 10, PAGE.top - 20)
+        }
+        
+        // Título do setor no cabeçalho
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#FFFFFF')
+        doc.text(`${index + 1}. ${titulo}`, PAGE.left + 200, PAGE.top - 18, { width: 300 })
         
         doc.fillColor('#000000').font('Helvetica').fontSize(10)
-        doc.y = PAGE.top + 25
+        doc.y = PAGE.top + 20
 
         // Diagnóstico Atual
         doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
@@ -385,6 +459,30 @@ router.get('/submissions/:id/pdf', async (req, res) => {
 
       // Página de Conclusão
       doc.addPage()
+      
+      // Repetir cabeçalho verde
+      doc.save()
+      doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 50).fill()
+      doc.restore()
+      
+      if (logoBuffer) {
+        try {
+          doc.image(logoBuffer, PAGE.left + 10, PAGE.top - 30, { width: 100, height: 35, fit: [100, 35] })
+        } catch (err) {
+          doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
+          doc.text(company.companyName, PAGE.left + 10, PAGE.top - 20)
+        }
+      } else {
+        doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
+        doc.text(company.companyName.toUpperCase(), PAGE.left + 10, PAGE.top - 20)
+      }
+      
+      doc.font('Helvetica-Bold').fontSize(12).fillColor('#FFFFFF')
+      doc.text('CONCLUSAO', PAGE.left + 200, PAGE.top - 18)
+      
+      doc.fillColor('#000000').font('Helvetica').fontSize(10)
+      doc.y = PAGE.top + 20
+      
       drawSectionTitle('ANÁLISE CONSOLIDADA E RECOMENDAÇÕES')
       
       doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
@@ -460,26 +558,31 @@ router.get('/submissions/:id/pdf', async (req, res) => {
         { label: 'Assinatura do Responsável do Hotel', key: 'assinatura_hotel' },
       ])
 
-      // RODAPÉ MINIMALISTA
+      // RODAPÉ COM INFORMAÇÕES DA EMPRESA
       doc.moveDown(1)
       ensureSpace(40)
       
       const footerY = doc.y
       
-      // Linha superior
+      // Linha superior verde
       doc.save()
-      doc.strokeColor('#CCCCCC').lineWidth(0.5)
+      doc.strokeColor(company.companyPrimaryColor).lineWidth(1)
       doc.moveTo(PAGE.left, footerY).lineTo(PAGE.right, footerY).stroke()
       doc.restore()
       
       // Texto do rodapé
       doc.fontSize(7).fillColor('#666666').font('Helvetica')
-      doc.text('Documento Confidencial - Clean & Health Solucoes em Higienizacao', 
+      doc.text(`Documento Confidencial - ${company.companyName || 'Clean & Health'}`, 
                PAGE.left, footerY + 8, { width: PAGE.right - PAGE.left, align: 'center' })
       
       doc.fontSize(7).fillColor('#999999')
-      doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')} | www.chealth.com.br | contato@chealth.com.br`, 
-               PAGE.left, footerY + 20, { width: PAGE.right - PAGE.left, align: 'center' })
+      const footerInfo = [
+        `Emitido em: ${new Date().toLocaleDateString('pt-BR')}`,
+        company.companySite || '',
+        company.companyEmail || ''
+      ].filter(Boolean).join(' | ')
+      
+      doc.text(footerInfo, PAGE.left, footerY + 20, { width: PAGE.right - PAGE.left, align: 'center' })
       
       doc.fillColor('#000000').font('Helvetica')
     } else if (form.title && form.title.toLowerCase().includes('smart de higieniza')) {
