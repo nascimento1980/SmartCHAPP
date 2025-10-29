@@ -247,7 +247,7 @@ const VisitFormsPanel = ({ visit }) => {
   const openPdf = async () => {
     try {
       if (!lastSubmissionId) return
-      const res = await api.get(`/forms/submissions/${lastSubmissionId}/pdf`, { responseType: 'blob' })
+      const res = await api.get(`/forms-export/submissions/${lastSubmissionId}/pdf`, { responseType: 'blob' })
       const blob = new Blob([res.data], { type: 'application/pdf' })
       const url = window.URL.createObjectURL(blob)
       window.open(url, '_blank')
@@ -263,7 +263,7 @@ const VisitFormsPanel = ({ visit }) => {
         return
       }
       setLoading(true)
-      await api.post(`/forms/submissions/${lastSubmissionId}/email`, { to: emailTo })
+      await api.post(`/forms-export/submissions/${lastSubmissionId}/email`, { to: emailTo })
       setSnackbar({ open: true, message: 'Email enviado', severity: 'success' })
     } catch (e) {
       setSnackbar({ open: true, message: 'Falha ao enviar email', severity: 'error' })
@@ -274,7 +274,7 @@ const VisitFormsPanel = ({ visit }) => {
 
   const shareWhatsApp = () => {
     const text = lastSubmissionId
-      ? `Segue o checklist: ${window.location.origin}/api/v1/forms/submissions/${lastSubmissionId}/pdf`
+      ? `Segue o checklist: ${window.location.origin}/api/forms-export/submissions/${lastSubmissionId}/pdf`
       : 'Checklist preenchido no CH SMART.'
     const wa = `https://wa.me/?text=${encodeURIComponent(text)}`
     window.open(wa, '_blank')
