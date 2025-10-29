@@ -7,7 +7,8 @@ export default function useSSE(token) {
 
   useEffect(() => {
     if (!token) return;
-    const url = new URL('/api/events', window.location.origin.replace(':3000', ':3001'));
+    // Usar a mesma origem do window (com proxy do Vite) ao invés de trocar porta
+    const url = new URL('/api/events', window.location.origin);
     url.searchParams.set('token', token);
     const evt = new EventSource(url.toString(), { withCredentials: false });
     evtRef.current = evt;
