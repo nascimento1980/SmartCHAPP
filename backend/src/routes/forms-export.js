@@ -31,29 +31,21 @@ router.get('/submissions/:id/pdf', async (req, res) => {
     }
     const drawDivider = () => { ensureSpace(12); doc.moveDown(0.3); doc.moveTo(PAGE.left, doc.y).lineTo(PAGE.right, doc.y).stroke(); doc.moveDown(0.6) }
     const drawSectionTitle = (title) => {
-      ensureSpace(30)
-      
-      // Box com fundo e borda para o título
+      ensureSpace(25)
       const titleY = doc.y
+      
+      // Linha superior
       doc.save()
-      
-      // Fundo do título
-      doc.fillColor('#F0F8FF').rect(PAGE.left, titleY, PAGE.right - PAGE.left, 24).fill()
-      
-      // Borda inferior com cor da marca
-      doc.fillColor('#00AA66').rect(PAGE.left, titleY + 24, PAGE.right - PAGE.left, 3).fill()
-      
-      // Detalhe lateral esquerdo
-      doc.fillColor('#003366').rect(PAGE.left, titleY, 5, 24).fill()
-      
+      doc.strokeColor('#00AA66').lineWidth(2)
+      doc.moveTo(PAGE.left, titleY).lineTo(PAGE.right, titleY).stroke()
       doc.restore()
       
       // Texto do título
-      doc.font('Helvetica-Bold').fontSize(12).fillColor('#003366')
-      doc.text(`▶  ${title}`, PAGE.left + 12, titleY + 7, { width: PAGE.right - PAGE.left - 20, align: 'left' })
+      doc.font('Helvetica-Bold').fontSize(11).fillColor('#003366')
+      doc.text(title.toUpperCase(), PAGE.left, titleY + 6, { width: PAGE.right - PAGE.left })
       
-      doc.fillColor('#000').font('Helvetica')
-      doc.y = titleY + 32
+      doc.fillColor('#000').font('Helvetica').fontSize(10)
+      doc.y = titleY + 24
     }
     const normalizeVal = (value) => (value === undefined || value === null || value === '' ? '—' : (Array.isArray(value) ? value.join(', ') : String(value)))
     const drawTable = (headers, rows, widths) => {
@@ -62,28 +54,29 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       // Remove linhas totalmente vazias
       const bodyRows = (rows || []).filter(cols => (cols || []).some(c => normalizeVal(c) !== '—'))
       if (!bodyRows.length) return
-      // Header drawer com estilo Clean & Health
+      // Header drawer minimalista
       const drawHeader = () => {
-        ensureSpace(22)
+        ensureSpace(20)
         let yh = doc.y
         doc.save()
         
-        // Fundo gradiente simulado do header
-        doc.fillColor('#003366').rect(startX, yh, totalW, 18).fill()
+        // Fundo cinza claro
+        doc.fillColor('#F5F5F5').rect(startX, yh, totalW, 16).fill()
         
         doc.restore()
         let xh = startX
         headers.forEach((h, idx) => {
-          // Borda das células do header
-          doc.strokeColor('#FFFFFF').lineWidth(0.5).rect(xh, yh, widths[idx], 18).stroke()
+          // Borda
+          doc.strokeColor('#CCCCCC').lineWidth(0.5).rect(xh, yh, widths[idx], 16).stroke()
           
-          // Texto do header em branco e negrito
-          doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF').text(h, xh + 6, yh + 5, { width: widths[idx] - 12, align: 'left' })
+          // Texto do header
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#333333')
+          doc.text(h, xh + 4, yh + 4, { width: widths[idx] - 8 })
           xh += widths[idx]
         })
         
         doc.fillColor('#000').strokeColor('#000').lineWidth(1).font('Helvetica')
-        return yh + 18
+        return yh + 16
       }
 
       // First header
@@ -139,33 +132,30 @@ router.get('/submissions/:id/pdf', async (req, res) => {
     }
 
     const drawSignatures = (pairs) => {
-      ensureSpace(140)
+      ensureSpace(100)
       
-      // Título da seção com estilo Clean & Health
-      doc.fontSize(13).fillColor('#003366').text('━━━━━━━━━━━━━━━  AUTENTICAÇÃO  ━━━━━━━━━━━━━━━', { align: 'center' })
-      doc.fillColor('#000').moveDown(0.6)
+      // Título simples
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+      doc.text('AUTENTICACAO', PAGE.left, doc.y, { align: 'center' })
+      doc.moveDown(0.5)
       
-      const boxW = ((PAGE.right - PAGE.left) / 2) - 15
-      const boxH = 90
+      const boxW = ((PAGE.right - PAGE.left) / 2) - 20
+      const boxH = 70
       const startY = doc.y
       
       pairs.forEach(({ label, key }, index) => {
-        const xPos = index === 0 ? PAGE.left : (PAGE.left + boxW + 30)
+        const xPos = index === 0 ? PAGE.left : (PAGE.left + boxW + 40)
         const yPos = startY
         
-        // Moldura com sombra
+        // Moldura simples
         doc.save()
-        doc.fillColor('#E0E0E0').rect(xPos + 2, yPos + 2, boxW, boxH).fill()
+        doc.strokeColor('#CCCCCC').lineWidth(1)
+        doc.rect(xPos, yPos, boxW, boxH).stroke()
         doc.restore()
         
-        // Moldura principal
-        doc.lineWidth(1.5)
-        doc.strokeColor('#003366')
-        doc.rect(xPos, yPos, boxW, boxH).stroke()
-        
-        // Label com fundo colorido
-        doc.fillColor('#003366').rect(xPos, yPos, boxW, 22).fill()
-        doc.fontSize(9).fillColor('#FFFFFF').text(label, xPos + 4, yPos + 7, { width: boxW - 8, align: 'center' })
+        // Label
+        doc.font('Helvetica-Bold').fontSize(8).fillColor('#333333')
+        doc.text(label, xPos + 5, yPos + 5, { width: boxW - 10 })
         
         // Área da assinatura
         const src = data[key]
@@ -175,30 +165,29 @@ router.get('/submissions/:id/pdf', async (req, res) => {
           try {
             const base64 = (src || '').split(',')[1] || ''
             const buffer = Buffer.from(base64, 'base64')
-            doc.image(buffer, xPos + 8, yPos + 28, { fit: [boxW - 16, boxH - 38], align: 'center', valign: 'center' })
+            doc.image(buffer, xPos + 5, yPos + 18, { fit: [boxW - 10, boxH - 28] })
           } catch (_) {
-            doc.fontSize(9).fillColor('#999').text('⚠️ Erro ao carregar assinatura', xPos, yPos + boxH / 2, { width: boxW, align: 'center' })
+            doc.fontSize(8).fillColor('#999999').text('Erro ao carregar', xPos, yPos + 35, { width: boxW, align: 'center' })
           }
         } else if (imgPath && fs.existsSync(imgPath)) {
           try {
-            doc.image(imgPath, xPos + 8, yPos + 28, { fit: [boxW - 16, boxH - 38], align: 'center', valign: 'center' })
+            doc.image(imgPath, xPos + 5, yPos + 18, { fit: [boxW - 10, boxH - 28] })
           } catch (_) {
-            doc.fontSize(9).fillColor('#999').text('⚠️ Erro ao carregar assinatura', xPos, yPos + boxH / 2, { width: boxW, align: 'center' })
+            doc.fontSize(8).fillColor('#999999').text('Erro ao carregar', xPos, yPos + 35, { width: boxW, align: 'center' })
           }
         } else {
-          // Placeholder para assinatura não fornecida
-          doc.fontSize(8).fillColor('#AAAAAA').text('____________________________', xPos, yPos + 50, { width: boxW, align: 'center' })
-          doc.fontSize(9).fillColor('#888').text('Assinatura Pendente', xPos, yPos + 64, { width: boxW, align: 'center' })
+          doc.fontSize(8).fillColor('#AAAAAA').text('_________________________', xPos, yPos + 40, { width: boxW, align: 'center' })
+          doc.fontSize(7).fillColor('#888888').text('Pendente', xPos, yPos + 52, { width: boxW, align: 'center' })
         }
         
-        // Linha de base para assinatura
+        // Linha de base
         doc.strokeColor('#CCCCCC').lineWidth(0.5)
-        doc.moveTo(xPos + 10, yPos + boxH - 8).lineTo(xPos + boxW - 10, yPos + boxH - 8).stroke()
+        doc.moveTo(xPos + 5, yPos + boxH - 5).lineTo(xPos + boxW - 5, yPos + boxH - 5).stroke()
         
-        doc.fillColor('#000').strokeColor('#000')
+        doc.fillColor('#000000').strokeColor('#000000')
       })
       
-      doc.y = startY + boxH + 12
+      doc.y = startY + boxH + 10
     }
 
     // Header
@@ -249,57 +238,30 @@ router.get('/submissions/:id/pdf', async (req, res) => {
 
     // Renderização especial para Hotelaria - CheckList Mestre de Diagnóstico e Viabilidade
     if (form.title && form.title.toLowerCase().includes('hotelaria')) {
-      // ============================================
-      // CABEÇALHO PROFISSIONAL CLEAN & HEALTH
-      // ============================================
+      // CABEÇALHO MINIMALISTA
+      doc.font('Helvetica-Bold').fontSize(18).fillColor('#00AA66')
+      doc.text('CLEAN & HEALTH', PAGE.left, PAGE.top, { align: 'left' })
       
-      // Barra superior com gradiente simulado (3 barras)
-      doc.save()
-      doc.fillColor('#00AA66').rect(PAGE.left - 40, PAGE.top - 40, 595, 8).fill()
-      doc.fillColor('#007744').rect(PAGE.left - 40, PAGE.top - 32, 595, 5).fill()
-      doc.fillColor('#005533').rect(PAGE.left - 40, PAGE.top - 27, 595, 3).fill()
-      doc.restore()
+      doc.font('Helvetica').fontSize(8).fillColor('#666666')
+      doc.text('Solucoes Inteligentes em Higienizacao', PAGE.left, PAGE.top + 22)
       
-      // Box do cabeçalho com fundo
-      doc.save()
-      doc.fillColor('#F8F9FA').rect(PAGE.left, PAGE.top, PAGE.right - PAGE.left, 95).fill()
-      doc.strokeColor('#00AA66').lineWidth(2).rect(PAGE.left, PAGE.top, PAGE.right - PAGE.left, 95).stroke()
-      doc.restore()
-      
-      // Logo/Marca Clean & Health (simulada com texto estilizado)
-      doc.fontSize(24).fillColor('#00AA66').font('Helvetica-Bold')
-      doc.text('CLEAN & HEALTH', PAGE.left + 15, PAGE.top + 12, { width: 200 })
-      
-      doc.fontSize(9).fillColor('#555').font('Helvetica')
-      doc.text('SOLUÇÕES INTELIGENTES EM HIGIENIZAÇÃO', PAGE.left + 15, PAGE.top + 40, { width: 200 })
-      
-      // Linha vertical separadora
-      doc.save()
-      doc.strokeColor('#00AA66').lineWidth(1.5)
-      doc.moveTo(PAGE.left + 230, PAGE.top + 10).lineTo(PAGE.left + 230, PAGE.top + 85).stroke()
-      doc.restore()
+      // Linha separadora
+      doc.strokeColor('#00AA66').lineWidth(1)
+      doc.moveTo(PAGE.left, PAGE.top + 35).lineTo(PAGE.right, PAGE.top + 35).stroke()
       
       // Título do documento
-      doc.fontSize(16).fillColor('#003366').font('Helvetica-Bold')
-      doc.text('CHECKLIST MESTRE', PAGE.left + 245, PAGE.top + 15, { width: 260, align: 'center' })
+      doc.font('Helvetica-Bold').fontSize(14).fillColor('#333333')
+      doc.text('CHECKLIST MESTRE DE DIAGNOSTICO E VIABILIDADE', PAGE.left, PAGE.top + 42, { align: 'center' })
       
-      doc.fontSize(14).fillColor('#00AA66').font('Helvetica-Bold')
-      doc.text('DIAGNÓSTICO E VIABILIDADE', PAGE.left + 245, PAGE.top + 35, { width: 260, align: 'center' })
+      doc.font('Helvetica').fontSize(10).fillColor('#666666')
+      doc.text('Setor: Hotelaria', PAGE.left, PAGE.top + 60, { align: 'center' })
       
-      // Badge do setor
-      doc.save()
-      doc.fillColor('#003366').roundedRect(PAGE.left + 290, PAGE.top + 58, 170, 22, 3).fill()
-      doc.fontSize(11).fillColor('#FFFFFF').font('Helvetica-Bold')
-      doc.text('🏨 SETOR: HOTELARIA', PAGE.left + 290, PAGE.top + 64, { width: 170, align: 'center' })
-      doc.restore()
+      // Informações do documento
+      doc.fontSize(8).fillColor('#999999')
+      doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, PAGE.left, PAGE.top + 75, { align: 'right' })
       
-      // Informações de rodapé do cabeçalho
-      doc.fontSize(7).fillColor('#666').font('Helvetica')
-      doc.text(`Documento Confidencial | Emitido em: ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}`, 
-               PAGE.left + 15, PAGE.top + 82, { width: 500, align: 'left' })
-      
-      doc.fillColor('#000').font('Helvetica')
-      doc.y = PAGE.top + 110
+      doc.fillColor('#000000').font('Helvetica').fontSize(10)
+      doc.y = PAGE.top + 95
 
       // Informações do Hotel
       drawSectionTitle('INFORMAÇÕES DO ESTABELECIMENTO')
@@ -358,40 +320,21 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       setores.forEach(({ titulo, icone, prefix }, index) => {
         doc.addPage()
         
-        // ============================================
-        // CABEÇALHO DE SETOR - DESIGN ÚNICO
-        // ============================================
+        // CABEÇALHO MINIMALISTA DE SETOR
+        doc.font('Helvetica-Bold').fontSize(12).fillColor('#333333')
+        doc.text(`${index + 1}. ${titulo}`, PAGE.left, PAGE.top)
         
-        // Barra superior colorida
-        doc.save()
-        doc.fillColor('#00AA66').rect(PAGE.left - 40, PAGE.top - 40, 595, 5).fill()
-        doc.restore()
+        // Linha separadora
+        doc.strokeColor('#CCCCCC').lineWidth(0.5)
+        doc.moveTo(PAGE.left, PAGE.top + 18).lineTo(PAGE.right, PAGE.top + 18).stroke()
         
-        // Box do título do setor
-        doc.save()
-        doc.fillColor('#F8F9FA').rect(PAGE.left, PAGE.top, PAGE.right - PAGE.left, 50).fill()
-        doc.strokeColor('#00AA66').lineWidth(2).rect(PAGE.left, PAGE.top, PAGE.right - PAGE.left, 50).stroke()
-        
-        // Número do setor (badge circular)
-        doc.fillColor('#003366').circle(PAGE.left + 25, PAGE.top + 25, 18).fill()
-        doc.fontSize(14).fillColor('#FFFFFF').font('Helvetica-Bold')
-        doc.text(`${index + 1}`, PAGE.left + 18, PAGE.top + 18, { width: 14, align: 'center' })
-        
-        // Título do setor
-        doc.fontSize(14).fillColor('#003366').font('Helvetica-Bold')
-        doc.text(titulo, PAGE.left + 55, PAGE.top + 12, { width: 340, align: 'left' })
-        
-        // Ícone grande do setor
-        doc.fontSize(28).fillColor('#00AA66')
-        doc.text(icone, PAGE.right - 50, PAGE.top + 8, { width: 40, align: 'center' })
-        
-        doc.restore()
-        doc.fillColor('#000').font('Helvetica')
-        doc.y = PAGE.top + 60
+        doc.fillColor('#000000').font('Helvetica').fontSize(10)
+        doc.y = PAGE.top + 25
 
         // Diagnóstico Atual
-        doc.fontSize(12).fillColor('#006633').text('DIAGNÓSTICO DA SITUAÇÃO ATUAL')
-        doc.fillColor('#000').moveDown(0.3)
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+        doc.text('DIAGNOSTICO DA SITUACAO ATUAL', PAGE.left, doc.y)
+        doc.fillColor('#000000').font('Helvetica').moveDown(0.3)
         drawTable(['Item','Resposta/Observação'], [
           ['Produtos Utilizados Atualmente', normalizeVal(data[`${prefix}_produtos_atuais`])],
           ['Diluições Praticadas', normalizeVal(data[`${prefix}_diluicao_atual`])],
@@ -405,8 +348,9 @@ router.get('/submissions/:id/pdf', async (req, res) => {
 
         // Teste de Produtos SMART
         doc.moveDown(0.5)
-        doc.fontSize(12).fillColor('#006633').text('TESTE DE PRODUTOS SMART')
-        doc.fillColor('#000').moveDown(0.3)
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+        doc.text('TESTE DE PRODUTOS SMART', PAGE.left, doc.y)
+        doc.fillColor('#000000').font('Helvetica').moveDown(0.3)
         drawTable(['Item','Detalhes'], [
           ['Produto(s) Testado(s)', normalizeVal(data[`${prefix}_produto_smart`])],
           ['Diluição Aplicada', normalizeVal(data[`${prefix}_diluicao_smart`])],
@@ -417,8 +361,9 @@ router.get('/submissions/:id/pdf', async (req, res) => {
 
         // Avaliação e Viabilidade
         doc.moveDown(0.5)
-        doc.fontSize(12).fillColor('#006633').text('AVALIAÇÃO E VIABILIDADE')
-        doc.fillColor('#000').moveDown(0.3)
+        doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+        doc.text('AVALIACAO E VIABILIDADE', PAGE.left, doc.y)
+        doc.fillColor('#000000').font('Helvetica').moveDown(0.3)
         drawTable(['Critério','Avaliação'], [
           ['Eficácia do Produto SMART', normalizeVal(data[`${prefix}_eficacia`])],
           ['Redução de Custos Estimada', normalizeVal(data[`${prefix}_reducao_custos`])],
@@ -431,8 +376,10 @@ router.get('/submissions/:id/pdf', async (req, res) => {
         // Observações do Setor
         if (data[`${prefix}_observacoes`]) {
           doc.moveDown(0.5)
-          doc.fontSize(11).fillColor('#333').text('Observações Adicionais:', { underline: true })
-          doc.fontSize(10).fillColor('#000').text(normalizeVal(data[`${prefix}_observacoes`]), { width: PAGE.right - PAGE.left })
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#333333')
+          doc.text('Observacoes Adicionais:', PAGE.left, doc.y)
+          doc.font('Helvetica').fontSize(9).fillColor('#000000')
+          doc.text(normalizeVal(data[`${prefix}_observacoes`]), PAGE.left, doc.y + 2, { width: PAGE.right - PAGE.left })
         }
       })
 
@@ -440,15 +387,17 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       doc.addPage()
       drawSectionTitle('ANÁLISE CONSOLIDADA E RECOMENDAÇÕES')
       
-      doc.fontSize(11).fillColor('#006633').text('OPORTUNIDADES IDENTIFICADAS')
-      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+      doc.text('OPORTUNIDADES IDENTIFICADAS', PAGE.left, doc.y)
+      doc.fillColor('#000000').font('Helvetica').fontSize(9).moveDown(0.3)
       drawTable(['Setor','Oportunidade','Estimativa de Economia Mensal'], [
         ['Setores Prioritários', normalizeVal(data['setores_prioritarios']), normalizeVal(data['economia_estimada'])],
       ], [200, 200, PAGE.right - PAGE.left - 400])
 
       doc.moveDown(0.5)
-      doc.fontSize(11).fillColor('#006633').text('PROPOSTA DE VALOR SMART')
-      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+      doc.text('PROPOSTA DE VALOR SMART', PAGE.left, doc.y)
+      doc.fillColor('#000000').font('Helvetica').fontSize(9).moveDown(0.3)
       drawTable(['Item','Valor'], [
         ['Investimento Mensal Estimado', normalizeVal(data['investimento_mensal'])],
         ['Economia Mensal Estimada', normalizeVal(data['economia_mensal'])],
@@ -457,67 +406,52 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       ], [220, PAGE.right - PAGE.left - 220])
 
       doc.moveDown(0.5)
-      doc.fontSize(11).fillColor('#006633').text('PRÓXIMOS PASSOS')
-      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+      doc.text('PROXIMOS PASSOS', PAGE.left, doc.y)
+      doc.fillColor('#000000').font('Helvetica').fontSize(9).moveDown(0.3)
       const proximosPassos = normalizeVal(data['proximos_passos'])
-      doc.text(proximosPassos, { width: PAGE.right - PAGE.left, align: 'justify' })
+      doc.text(proximosPassos, PAGE.left, doc.y, { width: PAGE.right - PAGE.left })
 
       doc.moveDown(0.5)
-      doc.fontSize(11).fillColor('#006633').text('OBSERVAÇÕES FINAIS DO CONSULTOR')
-      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
+      doc.text('OBSERVACOES FINAIS DO CONSULTOR', PAGE.left, doc.y)
+      doc.fillColor('#000000').font('Helvetica').fontSize(9).moveDown(0.3)
       const observacoesFinais = normalizeVal(data['observacoes_finais'])
-      doc.text(observacoesFinais, { width: PAGE.right - PAGE.left, align: 'justify' })
+      doc.text(observacoesFinais, PAGE.left, doc.y, { width: PAGE.right - PAGE.left })
 
-      // ============================================
-      // CLASSIFICAÇÃO DE VIABILIDADE - DESTAQUE
-      // ============================================
+      // CLASSIFICAÇÃO DE VIABILIDADE
       doc.moveDown(1)
-      ensureSpace(100)
+      ensureSpace(50)
       
       const viabilidadeY = doc.y
       const viabilidadeGeral = normalizeVal(data['viabilidade_geral'])
       
-      // Determinar cor e ícone baseado na viabilidade
-      let corViabilidade, bgViabilidade, iconeViabilidade, textoStatus
+      // Determinar cor baseado na viabilidade
+      let corViabilidade
       if (viabilidadeGeral.toLowerCase().includes('alta')) {
         corViabilidade = '#00AA00'
-        bgViabilidade = '#E8F5E9'
-        iconeViabilidade = '✅'
-        textoStatus = 'ALTA VIABILIDADE'
-      } else if (viabilidadeGeral.toLowerCase().includes('média')) {
+      } else if (viabilidadeGeral.toLowerCase().includes('media')) {
         corViabilidade = '#FF8800'
-        bgViabilidade = '#FFF3E0'
-        iconeViabilidade = '⚠️'
-        textoStatus = 'VIABILIDADE MÉDIA'
       } else {
         corViabilidade = '#CC0000'
-        bgViabilidade = '#FFEBEE'
-        iconeViabilidade = '❌'
-        textoStatus = 'BAIXA VIABILIDADE'
       }
       
-      // Box de destaque para viabilidade
+      // Box simples
       doc.save()
-      doc.fillColor(bgViabilidade).rect(PAGE.left, viabilidadeY, PAGE.right - PAGE.left, 75).fill()
-      doc.strokeColor(corViabilidade).lineWidth(3).rect(PAGE.left, viabilidadeY, PAGE.right - PAGE.left, 75).stroke()
+      doc.strokeColor(corViabilidade).lineWidth(2)
+      doc.rect(PAGE.left, viabilidadeY, PAGE.right - PAGE.left, 40).stroke()
       doc.restore()
       
       // Título
-      doc.fontSize(11).fillColor('#555').font('Helvetica')
-      doc.text('RESULTADO DA ANÁLISE:', PAGE.left + 15, viabilidadeY + 12, { width: PAGE.right - PAGE.left - 30, align: 'center' })
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#333333')
+      doc.text('CLASSIFICACAO DE VIABILIDADE GERAL:', PAGE.left + 10, viabilidadeY + 8, { width: PAGE.right - PAGE.left - 20 })
       
-      // Status principal com ícone
-      doc.fontSize(22).fillColor(corViabilidade).font('Helvetica-Bold')
-      doc.text(`${iconeViabilidade}  ${textoStatus}`, PAGE.left + 15, viabilidadeY + 30, { width: PAGE.right - PAGE.left - 30, align: 'center' })
+      // Status principal
+      doc.font('Helvetica-Bold').fontSize(14).fillColor(corViabilidade)
+      doc.text(viabilidadeGeral, PAGE.left + 10, viabilidadeY + 22, { width: PAGE.right - PAGE.left - 20 })
       
-      // Descrição detalhada
-      if (viabilidadeGeral !== '—' && viabilidadeGeral !== textoStatus) {
-        doc.fontSize(9).fillColor('#666').font('Helvetica')
-        doc.text(viabilidadeGeral, PAGE.left + 15, viabilidadeY + 58, { width: PAGE.right - PAGE.left - 30, align: 'center' })
-      }
-      
-      doc.fillColor('#000').font('Helvetica')
-      doc.y = viabilidadeY + 80
+      doc.fillColor('#000000').font('Helvetica').fontSize(10)
+      doc.y = viabilidadeY + 50
 
       // Assinaturas
       doc.moveDown(1)
@@ -526,46 +460,28 @@ router.get('/submissions/:id/pdf', async (req, res) => {
         { label: 'Assinatura do Responsável do Hotel', key: 'assinatura_hotel' },
       ])
 
-      // ============================================
-      // RODAPÉ PROFISSIONAL CLEAN & HEALTH
-      // ============================================
+      // RODAPÉ MINIMALISTA
       doc.moveDown(1)
-      ensureSpace(60)
+      ensureSpace(40)
       
       const footerY = doc.y
       
-      // Linha decorativa superior
+      // Linha superior
       doc.save()
-      doc.fillColor('#00AA66').rect(PAGE.left, footerY, PAGE.right - PAGE.left, 2).fill()
+      doc.strokeColor('#CCCCCC').lineWidth(0.5)
+      doc.moveTo(PAGE.left, footerY).lineTo(PAGE.right, footerY).stroke()
       doc.restore()
       
-      // Box do rodapé
-      doc.save()
-      doc.fillColor('#F8F9FA').rect(PAGE.left, footerY + 2, PAGE.right - PAGE.left, 45).fill()
-      doc.strokeColor('#CCCCCC').lineWidth(0.5).rect(PAGE.left, footerY + 2, PAGE.right - PAGE.left, 45).stroke()
-      doc.restore()
+      // Texto do rodapé
+      doc.fontSize(7).fillColor('#666666').font('Helvetica')
+      doc.text('Documento Confidencial - Clean & Health Solucoes em Higienizacao', 
+               PAGE.left, footerY + 8, { width: PAGE.right - PAGE.left, align: 'center' })
       
-      // Conteúdo do rodapé
-      doc.fontSize(8).fillColor('#003366').font('Helvetica-Bold')
-      doc.text('🔒 DOCUMENTO CONFIDENCIAL', PAGE.left + 10, footerY + 10, { width: 200, align: 'left' })
+      doc.fontSize(7).fillColor('#999999')
+      doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')} | www.chealth.com.br | contato@chealth.com.br`, 
+               PAGE.left, footerY + 20, { width: PAGE.right - PAGE.left, align: 'center' })
       
-      doc.fontSize(7).fillColor('#555').font('Helvetica')
-      doc.text('Este relatório é propriedade da Clean & Health Soluções Inteligentes em Higienização.', 
-               PAGE.left + 10, footerY + 22, { width: 500, align: 'left' })
-      
-      doc.fontSize(7).fillColor('#777')
-      doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 
-               PAGE.left + 10, footerY + 32, { width: 300, align: 'left' })
-      
-      // Informações de contato no rodapé
-      doc.fontSize(7).fillColor('#00AA66').font('Helvetica-Bold')
-      doc.text('🌐 www.chealth.com.br', PAGE.right - 150, footerY + 10, { width: 140, align: 'right' })
-      
-      doc.fontSize(7).fillColor('#003366')
-      doc.text('📧 contato@chealth.com.br', PAGE.right - 150, footerY + 22, { width: 140, align: 'right' })
-      doc.text('📱 (11) 0000-0000', PAGE.right - 150, footerY + 32, { width: 140, align: 'right' })
-      
-      doc.fillColor('#000').font('Helvetica')
+      doc.fillColor('#000000').font('Helvetica')
     } else if (form.title && form.title.toLowerCase().includes('smart de higieniza')) {
       // Cabeçalho
       drawSectionTitle('Cabeçalho')
