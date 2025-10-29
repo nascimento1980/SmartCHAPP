@@ -541,7 +541,16 @@ const VisitsManagementPage = () => {
                       renderCell: (params) => (
                         <Box sx={{ display: 'flex', gap: 1 }}>
                           <Tooltip title="Visualizar">
-                            <IconButton size="small" onClick={() => setViewVisit(params.row)}>
+                            <IconButton size="small" onClick={async () => {
+                              try {
+                                // Recarregar visita do servidor para garantir dados atualizados (checkin/checkout)
+                                const res = await api.get(`/visits/${params.row.id}`)
+                                setViewVisit(res.data)
+                              } catch (error) {
+                                // Fallback para dados em cache se falhar
+                                setViewVisit(params.row)
+                              }
+                            }}>
                               <Visibility />
                             </IconButton>
                           </Tooltip>

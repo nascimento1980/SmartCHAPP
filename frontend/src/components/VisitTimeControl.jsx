@@ -105,8 +105,10 @@ const VisitTimeControl = ({ visit, onVisitUpdated }) => {
       // Sinalizar UI para disponibilizar os formulários da visita
       try {
         window.dispatchEvent(new CustomEvent('visit:openForms', { detail: { visitId: visit.id } }));
+        window.dispatchEvent(new CustomEvent('visitCheckinCompleted', { detail: { visitId: visit.id } }));
       } catch (_) {}
 
+      // Atualizar estado da visita para refletir check-in
       if (onVisitUpdated) {
         onVisitUpdated(response.data.visit);
       }

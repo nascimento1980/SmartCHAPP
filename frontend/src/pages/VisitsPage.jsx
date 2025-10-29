@@ -471,7 +471,16 @@ const VisitsPage = () => {
                         <Tooltip title="Visualizar">
                           <IconButton 
                             size="small"
-                            onClick={() => setViewVisit(visit)}
+                            onClick={async () => {
+                              try {
+                                // Recarregar visita do servidor para garantir dados atualizados (checkin/checkout)
+                                const res = await api.get(`/visits/${visit.id}`)
+                                setViewVisit(res.data)
+                              } catch (error) {
+                                // Fallback para dados em cache se falhar
+                                setViewVisit(visit)
+                              }
+                            }}
                           >
                             <Visibility />
                           </IconButton>

@@ -437,9 +437,9 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       // Usar cabeçalho universal da empresa
       drawCompanyHeader()
       
-      // Título do documento
-      doc.font('Helvetica-Bold').fontSize(14).fillColor(company.companySecondaryColor)
-      doc.text('CHECKLIST MESTRE DE DIAGNOSTICO E VIABILIDADE', PAGE.left, doc.y, { align: 'center' })
+      // Título do documento (mais espaçado para não sobrepor)
+      doc.font('Helvetica-Bold').fontSize(13).fillColor(company.companySecondaryColor)
+      doc.text('CHECKLIST DIAGNOSTICO E VIABILIDADE', PAGE.left, doc.y + 5, { align: 'center' })
       
       doc.font('Helvetica').fontSize(11).fillColor('#666666')
       doc.text('Setor: Hotelaria', PAGE.left, doc.y + 20, { align: 'center' })

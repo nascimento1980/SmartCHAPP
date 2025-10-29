@@ -180,11 +180,49 @@ const VisitFormsPanel = ({ visit }) => {
         if (f.type === 'checkbox') init[f.name] = false
         else init[f.name] = ''
       })
+      
+      // Pré-preencher dados básicos da visita
       if (visit) {
         if (init['cliente'] !== undefined) init['cliente'] = visit.title || visit.client_name || ''
         if (init['local_instalacao'] !== undefined) init['local_instalacao'] = visit.address || ''
         if (init['data_instalacao'] !== undefined) init['data_instalacao'] = (visit.scheduled_date ? new Date(visit.scheduled_date).toISOString().slice(0,10) : '')
+        
+        // Auto-preencher dados do lead/cliente para formulários de Hotelaria
+        const isHotelariaForm = (res.data.title || '').toLowerCase().includes('hotelaria')
+        if (isHotelariaForm && (visit.customer_contact_id || visit.client_id || visit.lead_id)) {
+          try {
+            const contactId = visit.customer_contact_id || visit.client_id || visit.lead_id
+            const contactRes = await api.get(`/customer-contacts/${contactId}`)
+            const contact = contactRes.data
+            
+            if (contact) {
+              // Preencher dados do estabelecimento/hotel
+              if (init['hotel_nome'] !== undefined) init['hotel_nome'] = contact.company_name || contact.name || ''
+              if (init['estabelecimento_nome'] !== undefined) init['estabelecimento_nome'] = contact.company_name || contact.name || ''
+              if (init['hotel_endereco'] !== undefined) init['hotel_endereco'] = contact.address || ''
+              if (init['hotel_contato'] !== undefined) init['hotel_contato'] = contact.contact_name || contact.name || ''
+              if (init['hotel_telefone'] !== undefined) init['hotel_telefone'] = contact.phone || ''
+              if (init['hotel_email'] !== undefined) init['hotel_email'] = contact.email || ''
+              if (init['estabelecimento_cnpj'] !== undefined) init['estabelecimento_cnpj'] = contact.tax_id || ''
+              if (init['estabelecimento_telefone'] !== undefined) init['estabelecimento_telefone'] = contact.phone || ''
+              if (init['estabelecimento_email'] !== undefined) init['estabelecimento_email'] = contact.email || ''
+              if (init['estabelecimento_responsavel'] !== undefined) init['estabelecimento_responsavel'] = contact.contact_name || contact.name || ''
+              if (init['estabelecimento_endereco'] !== undefined) init['estabelecimento_endereco'] = contact.address || ''
+            }
+          } catch (contactError) {
+            console.warn('Não foi possível carregar dados do contato:', contactError)
+            // Não mostrar erro ao usuário, apenas continua sem preencher
+          }
+        }
+        
+        // Preencher data e consultor da visita
+        if (init['data_visita'] !== undefined) init['data_visita'] = visit.scheduled_date ? new Date(visit.scheduled_date).toISOString().slice(0,10) : ''
+        if (init['visita_data'] !== undefined) init['visita_data'] = visit.scheduled_date ? new Date(visit.scheduled_date).toISOString().slice(0,10) : ''
+        if (init['horario_visita'] !== undefined && visit.scheduled_time) init['horario_visita'] = visit.scheduled_time
+        if (init['consultor_nome'] !== undefined && visit.responsible) init['consultor_nome'] = visit.responsible.name || ''
+        if (init['visita_consultor'] !== undefined && visit.responsible) init['visita_consultor'] = visit.responsible.name || ''
       }
+      
       setValues(init)
     } catch (e) {
       setSnackbar({ open: true, message: 'Erro ao carregar formulário', severity: 'error' })
