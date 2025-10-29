@@ -93,48 +93,7 @@ router.get('/company', async (req, res) => {
   }
 })
 
-router.get('/company/logo', async (req, res) => {
-  try {
-    // Buscar configurações de logo
-    const [mimeSetting, dataSetting] = await Promise.all([
-      CompanySetting.findOne({ 
-        where: { setting_key: 'logoMime' },
-        attributes: ['id', 'setting_key', 'setting_value', 'setting_type', 'description', 'is_public', 'created_at', 'updated_at']
-      }),
-      CompanySetting.findOne({ 
-        where: { setting_key: 'logoData' },
-        attributes: ['id', 'setting_key', 'setting_value', 'setting_type', 'description', 'is_public', 'created_at', 'updated_at']
-      })
-    ]);
-    
-    if (!mimeSetting || !dataSetting || !dataSetting.setting_value) {
-      // Retornar logo padrão SVG em vez de 404
-      const defaultLogo = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">
-        <rect width="120" height="40" fill="#1976d2" rx="4"/>
-        <text x="60" y="25" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">CH SMART</text>
-      </svg>`;
-      
-      res.setHeader('Content-Type', 'image/svg+xml');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-      return res.send(defaultLogo);
-    }
-    
-    res.setHeader('Content-Type', mimeSetting.setting_value || 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    return res.end(dataSetting.setting_value);
-  } catch (error) {
-    console.error('Erro ao buscar logo:', error);
-    
-    // Retornar logo padrão mesmo em caso de erro
-    const defaultLogo = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">
-      <rect width="120" height="40" fill="#1976d2" rx="4"/>
-      <text x="60" y="25" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">CH SMART</text>
-    </svg>`;
-    
-    res.setHeader('Content-Type', 'image/svg+xml');
-    return res.send(defaultLogo);
-  }
-})
+// NOTA: Rota GET /company/logo movida para o final do arquivo (depois das rotas específicas)
 
 router.put('/company', async (req, res) => {
   try {
@@ -257,22 +216,9 @@ const getLogo = async (mimeKey, dataKey) => {
   return { mimeSetting, dataSetting };
 };
 
-router.post('/company/logo', async (req, res) => {
-  try {
-    const { fileBase64, filename } = req.body || {}
-    if (!fileBase64) return res.status(400).json({ error: 'Arquivo (base64) é obrigatório' })
-    const mime = (fileBase64.match(/^data:(.*?);base64,/) || [])[1] || 'image/png'
-    const data = Buffer.from(fileBase64.split(',').pop(), 'base64')
-    
-    await saveLogo('logoMime', 'logoData', mime, data);
-    
-    return res.json({ success: true })
-  } catch (e) {
-    console.error('Erro ao salvar logo:', e);
-    return res.status(500).json({ error: 'Falha ao salvar logo' })
-  }
-})
+// IMPORTANTE: Rotas mais específicas DEVEM vir ANTES das genéricas!
 
+// POST - Logos específicas para cada fundo (ANTES da rota genérica)
 router.post('/company/logo/white-bg', async (req, res) => {
   try {
     const { fileBase64 } = req.body || {}
@@ -337,6 +283,24 @@ router.post('/company/logo/black-bg', async (req, res) => {
   }
 })
 
+// POST - Logo genérica (DEPOIS das rotas específicas)
+router.post('/company/logo', async (req, res) => {
+  try {
+    const { fileBase64, filename } = req.body || {}
+    if (!fileBase64) return res.status(400).json({ error: 'Arquivo (base64) é obrigatório' })
+    const mime = (fileBase64.match(/^data:(.*?);base64,/) || [])[1] || 'image/png'
+    const data = Buffer.from(fileBase64.split(',').pop(), 'base64')
+    
+    await saveLogo('logoMime', 'logoData', mime, data);
+    
+    return res.json({ success: true })
+  } catch (e) {
+    console.error('Erro ao salvar logo:', e);
+    return res.status(500).json({ error: 'Falha ao salvar logo' })
+  }
+})
+
+// GET - Logos específicas para cada fundo
 router.get('/company/logo/white-bg', async (req, res) => {
   try {
     const { mimeSetting, dataSetting } = await getLogo('logoWhiteBgMime', 'logoWhiteBgData');
@@ -402,6 +366,51 @@ router.get('/company/logo/black-bg', async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar logo:', error);
     return res.status(500).json({ error: 'Erro ao buscar logo' });
+  }
+})
+
+// GET - Logo genérica (DEPOIS das rotas específicas)  
+router.get('/company/logo', async (req, res) => {
+  try {
+    // Buscar configurações de logo
+    const [mimeSetting, dataSetting] = await Promise.all([
+      CompanySetting.findOne({ 
+        where: { setting_key: 'logoMime' },
+        attributes: ['id', 'setting_key', 'setting_value', 'setting_type', 'description', 'is_public', 'created_at', 'updated_at']
+      }),
+      CompanySetting.findOne({ 
+        where: { setting_key: 'logoData' },
+        attributes: ['id', 'setting_key', 'setting_value', 'setting_type', 'description', 'is_public', 'created_at', 'updated_at']
+      })
+    ]);
+    
+    if (!mimeSetting || !dataSetting || !dataSetting.setting_value) {
+      // Retornar logo padrão SVG em vez de 404
+      const defaultLogo = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">
+        <rect width="120" height="40" fill="#1976d2" rx="4"/>
+        <text x="60" y="25" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">CH SMART</text>
+      </svg>`;
+      
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.send(defaultLogo);
+    }
+    
+    res.setHeader('Content-Type', mimeSetting.setting_value || 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(dataSetting.setting_value);
+  } catch (error) {
+    console.error('Erro ao buscar logo:', error);
+    
+    // Retornar logo padrão mesmo em caso de erro
+    const defaultLogo = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40" viewBox="0 0 120 40">
+      <rect width="120" height="40" fill="#1976d2" rx="4"/>
+      <text x="60" y="25" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="white" text-anchor="middle">CH SMART</text>
+    </svg>`;
+    
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.send(defaultLogo);
   }
 })
 
