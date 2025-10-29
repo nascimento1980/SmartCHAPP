@@ -744,6 +744,313 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       
       // Rodapé universal
       drawCompanyFooter()
+    } else if (form.title && form.title.toLowerCase().includes('envio direto')) {
+      // CHECKLIST SMART HOTELARIA - ENVIO DIRETO
+      drawCompanyHeader('CHECKLIST HOTELARIA - ENVIO DIRETO')
+      
+      drawSectionTitle('Informacoes do Estabelecimento')
+      drawTable(['Campo', 'Valor'], [
+        ['Nome do Estabelecimento', data['estabelecimento_nome']],
+        ['CNPJ', data['estabelecimento_cnpj']],
+        ['Endereco', data['estabelecimento_endereco']],
+        ['Responsavel', data['estabelecimento_responsavel']],
+        ['Telefone', data['estabelecimento_telefone']],
+        ['Email', data['estabelecimento_email']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Informacoes da Visita')
+      drawTable(['Campo', 'Valor'], [
+        ['Data da Visita', data['visita_data']],
+        ['Consultor', data['visita_consultor']],
+        ['Cargo Consultor', data['visita_consultor_cargo']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Avaliacao Geral do Estabelecimento')
+      drawTable(['Item', 'Status', 'Observacao'], [
+        ['Padrão de limpeza atual', data['avaliacao_padrao_limpeza'], data['avaliacao_padrao_obs']],
+        ['Produtos em uso', data['avaliacao_produtos_uso'], data['avaliacao_produtos_obs']],
+        ['Conformidade com normas', data['avaliacao_conformidade'], data['avaliacao_conformidade_obs']],
+        ['Treinamento da equipe', data['avaliacao_treinamento'], data['avaliacao_treinamento_obs']],
+      ], [200, 120, PAGE.right - PAGE.left - 200 - 120])
+      
+      drawSectionTitle('Areas de Aplicacao SMART')
+      drawTable(['Area', 'Produto Recomendado', 'Beneficio'], [
+        ['Banheiros', data['area_banheiros_produto'], data['area_banheiros_beneficio']],
+        ['Cozinha / Refeitorio', data['area_cozinha_produto'], data['area_cozinha_beneficio']],
+        ['Quartos / Apartamentos', data['area_quartos_produto'], data['area_quartos_beneficio']],
+        ['Areas Comuns', data['area_comuns_produto'], data['area_comuns_beneficio']],
+        ['Lavanderia', data['area_lavanderia_produto'], data['area_lavanderia_beneficio']],
+      ], [150, 160, PAGE.right - PAGE.left - 150 - 160])
+      
+      drawSectionTitle('Proposta de Valor SMART')
+      drawTable(['Item', 'Descricao'], [
+        ['Economia esperada', data['proposta_economia']],
+        ['Melhorias de qualidade', data['proposta_melhorias']],
+        ['Sustentabilidade', data['proposta_sustentabilidade']],
+        ['Suporte tecnico', data['proposta_suporte']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Proximos Passos')
+      drawTable(['Acao', 'Prazo / Responsavel'], [
+        ['Envio de proposta comercial', data['proximo_proposta']],
+        ['Agendamento de demonstracao', data['proximo_demonstracao']],
+        ['Analise tecnica detalhada', data['proximo_analise']],
+        ['Contato para follow-up', data['proximo_followup']],
+      ], [250, PAGE.right - PAGE.left - 250])
+      
+      drawSignatures([
+        { label: 'Assinatura do Responsavel', key: 'assinatura_responsavel' },
+        { label: 'Assinatura do Consultor SMART', key: 'assinatura_consultor' },
+      ])
+      
+      drawCompanyFooter()
+    } else if (form.title && (form.title.toLowerCase().includes('nti nc100') || form.title.toLowerCase().includes('cp plus'))) {
+      // CHECKLIST DE INSTALAÇÃO - NTI NC100 CP PLUS
+      drawCompanyHeader('CHECKLIST DE INSTALACAO - NTI NC100 CP PLUS')
+      
+      drawSectionTitle('Dados do Cliente')
+      drawTable(['Campo', 'Valor'], [
+        ['Nome da Empresa', data['cliente_empresa']],
+        ['CNPJ', data['cliente_cnpj']],
+        ['Contato', data['cliente_contato']],
+        ['Telefone', data['cliente_telefone']],
+        ['Email', data['cliente_email']],
+        ['Endereco Instalacao', data['cliente_endereco']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Informacoes do Equipamento')
+      drawTable(['Item', 'Especificacao'], [
+        ['Modelo', data['equip_modelo']],
+        ['Numero de Serie', data['equip_serie']],
+        ['Data de Fabricacao', data['equip_data_fabricacao']],
+        ['Garantia', data['equip_garantia']],
+        ['Voltagem', data['equip_voltagem']],
+      ], [200, PAGE.right - PAGE.left - 200])
+      
+      drawSectionTitle('Pre-Instalacao - Verificacoes')
+      drawTable(['Item', 'Status', 'Observacao'], [
+        ['Local de instalacao adequado', data['pre_local'], data['pre_local_obs']],
+        ['Ponto eletrico compativel', data['pre_eletrica'], data['pre_eletrica_obs']],
+        ['Ventilacao adequada', data['pre_ventilacao'], data['pre_ventilacao_obs']],
+        ['Espaco para manutencao', data['pre_espaco'], data['pre_espaco_obs']],
+        ['Nivelamento do piso', data['pre_nivelamento'], data['pre_nivelamento_obs']],
+      ], [200, 100, PAGE.right - PAGE.left - 200 - 100])
+      
+      drawSectionTitle('Instalacao - Etapas')
+      drawTable(['Etapa', 'Status', 'Responsavel', 'Obs'], [
+        ['Desembalagem e inspecao visual', data['inst_desembalagem'], data['inst_desembalagem_resp'], data['inst_desembalagem_obs']],
+        ['Posicionamento do equipamento', data['inst_posicionamento'], data['inst_posicionamento_resp'], data['inst_posicionamento_obs']],
+        ['Conexao eletrica', data['inst_eletrica'], data['inst_eletrica_resp'], data['inst_eletrica_obs']],
+        ['Configuracao inicial', data['inst_config'], data['inst_config_resp'], data['inst_config_obs']],
+        ['Teste de funcionamento', data['inst_teste'], data['inst_teste_resp'], data['inst_teste_obs']],
+      ], [180, 80, 90, PAGE.right - PAGE.left - 180 - 80 - 90])
+      
+      drawSectionTitle('Testes e Validacao')
+      drawTable(['Teste', 'Resultado', 'Observacao'], [
+        ['Inicializacao do sistema', data['teste_inicializacao'], data['teste_inicializacao_obs']],
+        ['Gravacao de video', data['teste_video'], data['teste_video_obs']],
+        ['Qualidade da imagem', data['teste_qualidade'], data['teste_qualidade_obs']],
+        ['Conexao de rede', data['teste_rede'], data['teste_rede_obs']],
+        ['Alarmes e notificacoes', data['teste_alarmes'], data['teste_alarmes_obs']],
+      ], [180, 120, PAGE.right - PAGE.left - 180 - 120])
+      
+      drawSectionTitle('Treinamento do Usuario')
+      drawTable(['Topico', 'Concluido'], [
+        ['Operacao basica', data['trein_operacao']],
+        ['Manutencao preventiva', data['trein_manutencao']],
+        ['Solucao de problemas comuns', data['trein_problemas']],
+        ['Contatos de suporte tecnico', data['trein_suporte']],
+      ], [280, PAGE.right - PAGE.left - 280])
+      
+      drawSectionTitle('Conclusao da Instalacao')
+      drawTable(['Item', 'Informacao'], [
+        ['Data de conclusao', data['conclusao_data']],
+        ['Tecnico responsavel', data['conclusao_tecnico']],
+        ['Status final', data['conclusao_status']],
+        ['Observacoes finais', data['conclusao_observacoes']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSignatures([
+        { label: 'Assinatura do Cliente', key: 'assinatura_cliente' },
+        { label: 'Assinatura do Tecnico', key: 'assinatura_tecnico' },
+      ])
+      
+      drawCompanyFooter()
+    } else if (form.title && form.title.toLowerCase().includes('limpeza industrial')) {
+      // CHECKLIST DE LIMPEZA INDUSTRIAL
+      drawCompanyHeader('CHECKLIST DE LIMPEZA INDUSTRIAL')
+      
+      drawSectionTitle('Identificacao do Local')
+      drawTable(['Campo', 'Valor'], [
+        ['Nome da Instalacao', data['local_nome']],
+        ['Tipo de Industria', data['local_tipo']],
+        ['Endereco', data['local_endereco']],
+        ['Responsavel pela Area', data['local_responsavel']],
+        ['Contato', data['local_contato']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Informacoes da Limpeza')
+      drawTable(['Campo', 'Valor'], [
+        ['Data da Limpeza', data['limpeza_data']],
+        ['Horario Inicio', data['limpeza_inicio']],
+        ['Horario Termino', data['limpeza_termino']],
+        ['Equipe Responsavel', data['limpeza_equipe']],
+        ['Supervisor', data['limpeza_supervisor']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Areas de Producao')
+      drawTable(['Area', 'Status Limpeza', 'Produtos Usados', 'Obs'], [
+        ['Linha de Producao 1', data['prod_linha1_status'], data['prod_linha1_produtos'], data['prod_linha1_obs']],
+        ['Linha de Producao 2', data['prod_linha2_status'], data['prod_linha2_produtos'], data['prod_linha2_obs']],
+        ['Area de Embalagem', data['prod_embalagem_status'], data['prod_embalagem_produtos'], data['prod_embalagem_obs']],
+        ['Estoque de Materias-Primas', data['prod_estoque_status'], data['prod_estoque_produtos'], data['prod_estoque_obs']],
+        ['Expedicao', data['prod_expedicao_status'], data['prod_expedicao_produtos'], data['prod_expedicao_obs']],
+      ], [130, 90, 120, PAGE.right - PAGE.left - 130 - 90 - 120])
+      
+      drawSectionTitle('Areas de Apoio')
+      drawTable(['Area', 'Status Limpeza', 'Observacao'], [
+        ['Vestiarios', data['apoio_vestiarios'], data['apoio_vestiarios_obs']],
+        ['Refeitorio', data['apoio_refeitorio'], data['apoio_refeitorio_obs']],
+        ['Banheiros', data['apoio_banheiros'], data['apoio_banheiros_obs']],
+        ['Escritorios', data['apoio_escritorios'], data['apoio_escritorios_obs']],
+        ['Areas Externas', data['apoio_externas'], data['apoio_externas_obs']],
+      ], [150, 120, PAGE.right - PAGE.left - 150 - 120])
+      
+      drawSectionTitle('Equipamentos e Maquinas')
+      drawTable(['Equipamento', 'Limpeza Realizada', 'Estado', 'Obs'], [
+        ['Maquinas de Producao', data['equip_producao'], data['equip_producao_estado'], data['equip_producao_obs']],
+        ['Empilhadeiras', data['equip_empilhadeira'], data['equip_empilhadeira_estado'], data['equip_empilhadeira_obs']],
+        ['Paleteiras', data['equip_paleteira'], data['equip_paleteira_estado'], data['equip_paleteira_obs']],
+        ['Esteiras Transportadoras', data['equip_esteira'], data['equip_esteira_estado'], data['equip_esteira_obs']],
+      ], [140, 100, 80, PAGE.right - PAGE.left - 140 - 100 - 80])
+      
+      drawSectionTitle('Gestao de Residuos')
+      drawTable(['Item', 'Status', 'Observacao'], [
+        ['Segregacao de residuos', data['residuo_segregacao'], data['residuo_segregacao_obs']],
+        ['Descarte adequado', data['residuo_descarte'], data['residuo_descarte_obs']],
+        ['Coleta seletiva', data['residuo_coleta'], data['residuo_coleta_obs']],
+        ['Registro de descarte', data['residuo_registro'], data['residuo_registro_obs']],
+      ], [180, 120, PAGE.right - PAGE.left - 180 - 120])
+      
+      drawSectionTitle('Conformidade e Seguranca')
+      drawTable(['Item', 'Conforme', 'Acao Necessaria'], [
+        ['EPI\'s utilizados', data['conf_epi'], data['conf_epi_acao']],
+        ['Sinalizacao de area em limpeza', data['conf_sinalizacao'], data['conf_sinalizacao_acao']],
+        ['FISPQ dos produtos disponiveis', data['conf_fispq'], data['conf_fispq_acao']],
+        ['Treinamento da equipe', data['conf_treinamento'], data['conf_treinamento_acao']],
+        ['Registro de procedimentos', data['conf_registro'], data['conf_registro_acao']],
+      ], [200, 100, PAGE.right - PAGE.left - 200 - 100])
+      
+      drawSectionTitle('Observacoes Gerais')
+      drawTable(['Campo', 'Conteudo'], [
+        ['Ocorrencias', data['obs_ocorrencias']],
+        ['Melhorias Sugeridas', data['obs_melhorias']],
+        ['Proxima Limpeza Programada', data['obs_proxima']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSignatures([
+        { label: 'Assinatura do Supervisor', key: 'assinatura_supervisor' },
+        { label: 'Assinatura do Responsavel da Area', key: 'assinatura_responsavel' },
+      ])
+      
+      drawCompanyFooter()
+    } else if (form.title && form.title.toLowerCase().includes('auditoria') && form.title.toLowerCase().includes('hospitalar')) {
+      // AUDITORIA DE HIGIENIZAÇÃO HOSPITALAR
+      drawCompanyHeader('AUDITORIA DE HIGIENIZACAO HOSPITALAR')
+      
+      drawSectionTitle('Identificacao da Instituicao')
+      drawTable(['Campo', 'Valor'], [
+        ['Nome da Instituicao', data['inst_nome']],
+        ['CNPJ', data['inst_cnpj']],
+        ['Tipo (Hospital/Clinica/UBS)', data['inst_tipo']],
+        ['Endereco', data['inst_endereco']],
+        ['Responsavel Tecnico', data['inst_responsavel']],
+        ['Contato', data['inst_contato']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Informacoes da Auditoria')
+      drawTable(['Campo', 'Valor'], [
+        ['Data da Auditoria', data['audit_data']],
+        ['Auditor(es)', data['audit_auditor']],
+        ['Setor(es) Auditado(s)', data['audit_setores']],
+        ['Tipo de Auditoria', data['audit_tipo']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Areas Criticas - Higienizacao')
+      drawTable(['Area', 'Conformidade', 'Pontuacao', 'Obs'], [
+        ['Centro Cirurgico', data['critica_centro_status'], data['critica_centro_pont'], data['critica_centro_obs']],
+        ['UTI', data['critica_uti_status'], data['critica_uti_pont'], data['critica_uti_obs']],
+        ['Isolamento', data['critica_isolamento_status'], data['critica_isolamento_pont'], data['critica_isolamento_obs']],
+        ['Pronto Socorro', data['critica_ps_status'], data['critica_ps_pont'], data['critica_ps_obs']],
+        ['Central de Material Esteril', data['critica_cme_status'], data['critica_cme_pont'], data['critica_cme_obs']],
+      ], [130, 90, 80, PAGE.right - PAGE.left - 130 - 90 - 80])
+      
+      drawSectionTitle('Areas Semi-Criticas')
+      drawTable(['Area', 'Conformidade', 'Pontuacao', 'Obs'], [
+        ['Enfermarias', data['semi_enfermaria_status'], data['semi_enfermaria_pont'], data['semi_enfermaria_obs']],
+        ['Ambulatorios', data['semi_ambulatorio_status'], data['semi_ambulatorio_pont'], data['semi_ambulatorio_obs']],
+        ['Laboratorio', data['semi_laboratorio_status'], data['semi_laboratorio_pont'], data['semi_laboratorio_obs']],
+        ['Radiologia', data['semi_radiologia_status'], data['semi_radiologia_pont'], data['semi_radiologia_obs']],
+      ], [130, 90, 80, PAGE.right - PAGE.left - 130 - 90 - 80])
+      
+      drawSectionTitle('Areas Nao-Criticas')
+      drawTable(['Area', 'Conformidade', 'Obs'], [
+        ['Corredores', data['nao_corredores'], data['nao_corredores_obs']],
+        ['Recepcao / Espera', data['nao_recepcao'], data['nao_recepcao_obs']],
+        ['Administrativo', data['nao_admin'], data['nao_admin_obs']],
+        ['Refeitorio', data['nao_refeitorio'], data['nao_refeitorio_obs']],
+        ['Banheiros Publicos', data['nao_banheiros'], data['nao_banheiros_obs']],
+      ], [180, 120, PAGE.right - PAGE.left - 180 - 120])
+      
+      drawSectionTitle('Gestao de Produtos e Equipamentos')
+      drawTable(['Item', 'Status', 'Conformidade', 'Obs'], [
+        ['Produtos registrados ANVISA', data['gestao_registro'], data['gestao_registro_conf'], data['gestao_registro_obs']],
+        ['FISPQ disponiveis', data['gestao_fispq'], data['gestao_fispq_conf'], data['gestao_fispq_obs']],
+        ['Diluicoes corretas', data['gestao_diluicao'], data['gestao_diluicao_conf'], data['gestao_diluicao_obs']],
+        ['Equipamentos de aplicacao', data['gestao_equipamentos'], data['gestao_equipamentos_conf'], data['gestao_equipamentos_obs']],
+        ['Armazenamento adequado', data['gestao_armazenamento'], data['gestao_armazenamento_conf'], data['gestao_armazenamento_obs']],
+      ], [160, 80, 90, PAGE.right - PAGE.left - 160 - 80 - 90])
+      
+      drawSectionTitle('Gestao de Pessoal')
+      drawTable(['Item', 'Conforme', 'Obs'], [
+        ['Treinamento em boas praticas', data['pessoal_treinamento'], data['pessoal_treinamento_obs']],
+        ['Uso de EPI\'s', data['pessoal_epi'], data['pessoal_epi_obs']],
+        ['Conhecimento de POPs', data['pessoal_pop'], data['pessoal_pop_obs']],
+        ['Imunizacao em dia', data['pessoal_imunizacao'], data['pessoal_imunizacao_obs']],
+        ['Supervisao adequada', data['pessoal_supervisao'], data['pessoal_supervisao_obs']],
+      ], [200, 100, PAGE.right - PAGE.left - 200 - 100])
+      
+      drawSectionTitle('Conformidade com Normas')
+      drawTable(['Norma', 'Atende', 'Desvios Encontrados'], [
+        ['RDC 15/2012 ANVISA', data['norma_rdc15'], data['norma_rdc15_desvios']],
+        ['RDC 42/2010 ANVISA', data['norma_rdc42'], data['norma_rdc42_desvios']],
+        ['NR 32 - Seguranca e Saude', data['norma_nr32'], data['norma_nr32_desvios']],
+        ['POPs Institucionais', data['norma_pops'], data['norma_pops_desvios']],
+      ], [180, 100, PAGE.right - PAGE.left - 180 - 100])
+      
+      drawSectionTitle('Resultado da Auditoria')
+      drawTable(['Item', 'Valor'], [
+        ['Pontuacao Total', data['resultado_pontuacao']],
+        ['Classificacao', data['resultado_classificacao']],
+        ['Nao Conformidades Criticas', data['resultado_nc_criticas']],
+        ['Nao Conformidades Menores', data['resultado_nc_menores']],
+        ['Prazo para Acoes Corretivas', data['resultado_prazo']],
+      ], [180, PAGE.right - PAGE.left - 180])
+      
+      drawSectionTitle('Recomendacoes e Plano de Acao')
+      drawTable(['Recomendacao', 'Prioridade', 'Prazo'], [
+        [data['rec_1'], data['rec_1_prioridade'], data['rec_1_prazo']],
+        [data['rec_2'], data['rec_2_prioridade'], data['rec_2_prazo']],
+        [data['rec_3'], data['rec_3_prioridade'], data['rec_3_prazo']],
+        [data['rec_4'], data['rec_4_prioridade'], data['rec_4_prazo']],
+      ].filter(row => row[0]), [280, 100, PAGE.right - PAGE.left - 280 - 100])
+      
+      drawSignatures([
+        { label: 'Assinatura do Auditor', key: 'assinatura_auditor' },
+        { label: 'Assinatura do Responsavel Tecnico', key: 'assinatura_responsavel' },
+      ])
+      
+      drawCompanyFooter()
     } else {
       // PDF GENÉRICO - Qualquer outro formulário
       Object.keys(data).forEach((k) => {
