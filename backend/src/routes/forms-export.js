@@ -210,46 +210,176 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       doc.moveDown(0.5)
     }
 
-    // Renderização especial para Hotelaria
+    // Renderização especial para Hotelaria - CheckList Mestre de Diagnóstico e Viabilidade
     if (form.title && form.title.toLowerCase().includes('hotelaria')) {
-      // Cabeçalho do hotel
-      drawSectionTitle('Cabeçalho')
-      drawTable(['Campo','Valor'], [
-        ['Hotel', data['hotel_nome']],
-        ['Categoria', data['hotel_categoria']],
-        ['Responsável Higienização', data['responsavel_hig']],
-        ['Data da Visita', data['data_visita']],
-      ], [150, PAGE.right - PAGE.left - 150])
+      // Logo e Cabeçalho Principal
+      doc.fontSize(18).fillColor('#003366').text('CHECKLIST MESTRE DE DIAGNÓSTICO E VIABILIDADE', { align: 'center', underline: true })
+      doc.fontSize(14).fillColor('#006633').text('Setor: Hotelaria', { align: 'center' })
+      doc.fillColor('#000').moveDown(0.8)
 
+      // Informações do Hotel
+      drawSectionTitle('INFORMAÇÕES DO ESTABELECIMENTO')
+      drawTable(['Campo','Informação'], [
+        ['Nome do Hotel', normalizeVal(data['hotel_nome'])],
+        ['Categoria', normalizeVal(data['hotel_categoria'])],
+        ['Endereço', normalizeVal(data['hotel_endereco'])],
+        ['Contato Principal', normalizeVal(data['hotel_contato'])],
+        ['Telefone', normalizeVal(data['hotel_telefone'])],
+        ['E-mail', normalizeVal(data['hotel_email'])],
+      ], [170, PAGE.right - PAGE.left - 170])
+
+      // Informações da Visita
+      drawSectionTitle('INFORMAÇÕES DA VISITA TÉCNICA')
+      drawTable(['Campo','Informação'], [
+        ['Data da Visita', normalizeVal(data['data_visita'])],
+        ['Horário', normalizeVal(data['horario_visita'])],
+        ['Consultor Responsável', normalizeVal(data['consultor_nome'])],
+        ['Responsável pela Higienização', normalizeVal(data['responsavel_hig'])],
+        ['Cargo do Responsável', normalizeVal(data['responsavel_cargo'])],
+      ], [170, PAGE.right - PAGE.left - 170])
+
+      // Estrutura do Hotel
+      drawSectionTitle('ESTRUTURA DO HOTEL')
+      drawTable(['Item','Quantidade'], [
+        ['Total de Quartos', normalizeVal(data['total_quartos'])],
+        ['Taxa de Ocupação Média', normalizeVal(data['taxa_ocupacao'])],
+        ['Equipe de Limpeza', normalizeVal(data['equipe_limpeza'])],
+        ['Turnos de Trabalho', normalizeVal(data['turnos_trabalho'])],
+      ], [250, PAGE.right - PAGE.left - 250])
+
+      // Fornecedor Atual
+      drawSectionTitle('FORNECEDOR ATUAL DE PRODUTOS DE LIMPEZA')
+      drawTable(['Item','Informação'], [
+        ['Nome do Fornecedor', normalizeVal(data['fornecedor_atual'])],
+        ['Tempo de Parceria', normalizeVal(data['tempo_parceria'])],
+        ['Valor Mensal Aproximado', normalizeVal(data['valor_mensal'])],
+        ['Nível de Satisfação (1-10)', normalizeVal(data['satisfacao_fornecedor'])],
+        ['Principais Problemas', normalizeVal(data['problemas_fornecedor'])],
+      ], [200, PAGE.right - PAGE.left - 200])
+
+      // Setores para Diagnóstico - Layout Aprimorado
       const setores = [
-        'Seção 1 – Recepção 🏢',
-        'Seção 2 – Quartos 🛏️',
-        'Seção 3 – Banheiros 🚿',
-        'Seção 4 – Restaurante 🍽️',
-        'Seção 5 – Lavanderia 🧺',
-        'Seção 6 – Piscina 🏊',
-        'Seção 7 – SPA / Academia 💆‍♂️',
-        'Seção 8 – Áreas de Lazer 🌳'
+        { titulo: 'SEÇÃO 1 – RECEPÇÃO E LOBBY', icone: '🏢', prefix: 'recepcao' },
+        { titulo: 'SEÇÃO 2 – APARTAMENTOS/QUARTOS', icone: '🛏️', prefix: 'quartos' },
+        { titulo: 'SEÇÃO 3 – BANHEIROS (Quartos)', icone: '🚿', prefix: 'banheiros' },
+        { titulo: 'SEÇÃO 4 – RESTAURANTE E ÁREA DE ALIMENTAÇÃO', icone: '🍽️', prefix: 'restaurante' },
+        { titulo: 'SEÇÃO 5 – COZINHA INDUSTRIAL', icone: '👨‍🍳', prefix: 'cozinha' },
+        { titulo: 'SEÇÃO 6 – LAVANDERIA', icone: '🧺', prefix: 'lavanderia' },
+        { titulo: 'SEÇÃO 7 – PISCINA E ÁREA EXTERNA', icone: '🏊', prefix: 'piscina' },
+        { titulo: 'SEÇÃO 8 – SPA E ACADEMIA', icone: '💆‍♂️', prefix: 'spa' },
+        { titulo: 'SEÇÃO 9 – ÁREAS COMUNS', icone: '🌳', prefix: 'areas_comuns' },
+        { titulo: 'SEÇÃO 10 – ÁREAS DE SERVIÇO', icone: '🔧', prefix: 'areas_servico' }
       ]
-      setores.forEach((titulo, i) => {
-        drawSectionTitle(titulo)
-        const p = `setor_${i}`
-        const headers = ['Item','Detalhes','Avaliação','Fornecedor Atual']
-        const widths = [140, 200, 110, 85]
-        const rows = [
-          ['Produto(s) Testado(s)', data[`${p}_produto`], data[`${p}_resultado_teste`], data[`${p}_fornecedor_atual`]],
-          ['Diluição(ões)', data[`${p}_diluicao`], data[`${p}_avaliacao_geral`], ''],
-          ['Superfícies', data[`${p}_superficies`] || [], '', ''],
-          ['Problemas Frequentes', data[`${p}_problemas`] || [], '', ''],
-          ['Uso de Produtos Agressivos', data[`${p}_agressivos`], '', ''],
-        ]
-        drawTable(headers, rows, widths)
+
+      setores.forEach(({ titulo, icone, prefix }) => {
+        doc.addPage()
+        doc.fontSize(14).fillColor('#003366').text(`${icone} ${titulo}`, { underline: true })
+        doc.fillColor('#000').moveDown(0.5)
+
+        // Diagnóstico Atual
+        doc.fontSize(12).fillColor('#006633').text('DIAGNÓSTICO DA SITUAÇÃO ATUAL')
+        doc.fillColor('#000').moveDown(0.3)
+        drawTable(['Item','Resposta/Observação'], [
+          ['Produtos Utilizados Atualmente', normalizeVal(data[`${prefix}_produtos_atuais`])],
+          ['Diluições Praticadas', normalizeVal(data[`${prefix}_diluicao_atual`])],
+          ['Superfícies Predominantes', normalizeVal(data[`${prefix}_superficies`])],
+          ['Frequência de Limpeza', normalizeVal(data[`${prefix}_frequencia`])],
+          ['Problemas Identificados', normalizeVal(data[`${prefix}_problemas`])],
+          ['Manchas Persistentes', normalizeVal(data[`${prefix}_manchas`])],
+          ['Odores Residuais', normalizeVal(data[`${prefix}_odores`])],
+          ['Uso de Produtos Agressivos', normalizeVal(data[`${prefix}_produtos_agressivos`])],
+        ], [220, PAGE.right - PAGE.left - 220])
+
+        // Teste de Produtos SMART
+        doc.moveDown(0.5)
+        doc.fontSize(12).fillColor('#006633').text('TESTE DE PRODUTOS SMART')
+        doc.fillColor('#000').moveDown(0.3)
+        drawTable(['Item','Detalhes'], [
+          ['Produto(s) Testado(s)', normalizeVal(data[`${prefix}_produto_smart`])],
+          ['Diluição Aplicada', normalizeVal(data[`${prefix}_diluicao_smart`])],
+          ['Superfície Testada', normalizeVal(data[`${prefix}_superficie_teste`])],
+          ['Resultado do Teste', normalizeVal(data[`${prefix}_resultado_teste`])],
+          ['Comparativo (Antes x Depois)', normalizeVal(data[`${prefix}_comparativo`])],
+        ], [180, PAGE.right - PAGE.left - 180])
+
+        // Avaliação e Viabilidade
+        doc.moveDown(0.5)
+        doc.fontSize(12).fillColor('#006633').text('AVALIAÇÃO E VIABILIDADE')
+        doc.fillColor('#000').moveDown(0.3)
+        drawTable(['Critério','Avaliação'], [
+          ['Eficácia do Produto SMART', normalizeVal(data[`${prefix}_eficacia`])],
+          ['Redução de Custos Estimada', normalizeVal(data[`${prefix}_reducao_custos`])],
+          ['Melhoria de Produtividade', normalizeVal(data[`${prefix}_produtividade`])],
+          ['Segurança e Sustentabilidade', normalizeVal(data[`${prefix}_sustentabilidade`])],
+          ['Viabilidade de Implementação', normalizeVal(data[`${prefix}_viabilidade`])],
+          ['Prioridade (Baixa/Média/Alta)', normalizeVal(data[`${prefix}_prioridade`])],
+        ], [230, PAGE.right - PAGE.left - 230])
+
+        // Observações do Setor
+        if (data[`${prefix}_observacoes`]) {
+          doc.moveDown(0.5)
+          doc.fontSize(11).fillColor('#333').text('Observações Adicionais:', { underline: true })
+          doc.fontSize(10).fillColor('#000').text(normalizeVal(data[`${prefix}_observacoes`]), { width: PAGE.right - PAGE.left })
+        }
       })
-      // Assinaturas hotelaria
+
+      // Página de Conclusão
+      doc.addPage()
+      drawSectionTitle('ANÁLISE CONSOLIDADA E RECOMENDAÇÕES')
+      
+      doc.fontSize(11).fillColor('#006633').text('OPORTUNIDADES IDENTIFICADAS')
+      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      drawTable(['Setor','Oportunidade','Estimativa de Economia Mensal'], [
+        ['Setores Prioritários', normalizeVal(data['setores_prioritarios']), normalizeVal(data['economia_estimada'])],
+      ], [200, 200, PAGE.right - PAGE.left - 400])
+
+      doc.moveDown(0.5)
+      doc.fontSize(11).fillColor('#006633').text('PROPOSTA DE VALOR SMART')
+      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      drawTable(['Item','Valor'], [
+        ['Investimento Mensal Estimado', normalizeVal(data['investimento_mensal'])],
+        ['Economia Mensal Estimada', normalizeVal(data['economia_mensal'])],
+        ['ROI Esperado (meses)', normalizeVal(data['roi_meses'])],
+        ['Benefícios Adicionais', normalizeVal(data['beneficios_adicionais'])],
+      ], [220, PAGE.right - PAGE.left - 220])
+
+      doc.moveDown(0.5)
+      doc.fontSize(11).fillColor('#006633').text('PRÓXIMOS PASSOS')
+      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      const proximosPassos = normalizeVal(data['proximos_passos'])
+      doc.text(proximosPassos, { width: PAGE.right - PAGE.left, align: 'justify' })
+
+      doc.moveDown(0.5)
+      doc.fontSize(11).fillColor('#006633').text('OBSERVAÇÕES FINAIS DO CONSULTOR')
+      doc.fillColor('#000').fontSize(10).moveDown(0.3)
+      const observacoesFinais = normalizeVal(data['observacoes_finais'])
+      doc.text(observacoesFinais, { width: PAGE.right - PAGE.left, align: 'justify' })
+
+      // Classificação de Viabilidade
+      doc.moveDown(0.8)
+      doc.fontSize(12).fillColor('#003366').text('CLASSIFICAÇÃO DE VIABILIDADE GERAL:', { underline: true })
+      doc.fillColor('#000').moveDown(0.3)
+      const viabilidadeGeral = normalizeVal(data['viabilidade_geral'])
+      const corViabilidade = viabilidadeGeral.includes('Alta') ? '#00AA00' : 
+                             viabilidadeGeral.includes('Média') ? '#FF8800' : '#CC0000'
+      doc.fontSize(16).fillColor(corViabilidade).text(viabilidadeGeral, { align: 'center' })
+      doc.fillColor('#000')
+
+      // Assinaturas
+      doc.moveDown(1)
       drawSignatures([
-        { label: 'Técnico', key: 'assinatura_tecnico' },
-        { label: 'Responsável do Hotel', key: 'assinatura_hotel' },
+        { label: 'Assinatura do Consultor SMART', key: 'assinatura_consultor' },
+        { label: 'Assinatura do Responsável do Hotel', key: 'assinatura_hotel' },
       ])
+
+      // Rodapé Final
+      doc.moveDown(0.5)
+      doc.fontSize(8).fillColor('#666').text(
+        'Este documento é confidencial e propriedade da Clean & Health Soluções. ' +
+        'Data de emissão: ' + new Date().toLocaleDateString('pt-BR'),
+        { align: 'center' }
+      )
+      doc.fillColor('#000')
     } else if (form.title && form.title.toLowerCase().includes('smart de higieniza')) {
       // Cabeçalho
       drawSectionTitle('Cabeçalho')
