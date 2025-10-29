@@ -35,6 +35,11 @@ import api from '../services/api';
 import native from '../utils/native';
 
 const VisitTimeControl = ({ visit, onVisitUpdated }) => {
+  // Verificação de segurança: se visit não existe ou não tem ID, não renderizar
+  if (!visit || !visit.id) {
+    return null;
+  }
+
   const [checkinDialog, setCheckinDialog] = useState(false);
   const [checkoutDialog, setCheckoutDialog] = useState(false);
   const [metricsDialog, setMetricsDialog] = useState(false);
