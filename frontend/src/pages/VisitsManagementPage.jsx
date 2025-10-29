@@ -108,7 +108,8 @@ const VisitsManagementPage = () => {
     em_andamento: 'warning',
     concluida: 'success',
     cancelada: 'error',
-    reagendada: 'default'
+    reagendada: 'default',
+    excluida: 'default'
   };
 
   const statusIcons = {
@@ -116,7 +117,8 @@ const VisitsManagementPage = () => {
     em_andamento: <Pending />,
     concluida: <CheckCircle />,
     cancelada: <Cancel />,
-    reagendada: <Schedule />
+    reagendada: <Schedule />,
+    excluida: <Delete />
   };
 
   const typeIcons = {
@@ -385,6 +387,7 @@ const VisitsManagementPage = () => {
                     <MenuItem value="concluida">Concluída</MenuItem>
                     <MenuItem value="cancelada">Cancelada</MenuItem>
                     <MenuItem value="reagendada">Reagendada</MenuItem>
+                    <MenuItem value="excluida">Excluída</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -537,30 +540,53 @@ const VisitsManagementPage = () => {
                       sortable: false,
                       align: 'center',
                       headerAlign: 'center',
-                      flex: 0.6,
-                      renderCell: (params) => (
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                          <Tooltip title="Visualizar">
-                            <IconButton size="small" onClick={async () => {
-                              try {
-                                // Recarregar visita do servidor para garantir dados atualizados (checkin/checkout)
-                                const res = await api.get(`/visits/${params.row.id}`)
-                                setViewVisit(res.data)
-                              } catch (error) {
-                                // Fallback para dados em cache se falhar
-                                setViewVisit(params.row)
-                              }
-                            }}>
-                              <Visibility />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Editar">
-                            <IconButton size="small" onClick={() => handleOpenDialog(params.row)}>
-                              <Edit />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      )
+                      flex: 0.8,
+                      renderCell: (params) => {
+                        const isCompleted = params.row.status === 'concluida';
+                        const isDeleted = params.row.status === 'excluida';
+                        
+                        return (
+                          <Box sx={{ display: 'flex', gap: 1 }}>
+                            <Tooltip title="Visualizar">
+                              <IconButton size="small" onClick={async () => {
+                                try {
+                                  // Recarregar visita do servidor para garantir dados atualizados (checkin/checkout)
+                                  const res = await api.get(`/visits/${params.row.id}`)
+                                  setViewVisit(res.data)
+                                } catch (error) {
+                                  // Fallback para dados em cache se falhar
+                                  setViewVisit(params.row)
+                                }
+                              }}>
+                                <Visibility />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={isCompleted || isDeleted ? "Não é possível editar visita concluída ou excluída" : "Editar"}>
+                              <span>
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => handleOpenDialog(params.row)}
+                                  disabled={isCompleted || isDeleted}
+                                >
+                                  <Edit />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                            <Tooltip title={isCompleted || isDeleted ? "Não é possível excluir visita concluída ou excluída" : "Excluir"}>
+                              <span>
+                                <IconButton 
+                                  size="small" 
+                                  color="error"
+                                  onClick={() => handleDelete(params.row.id)}
+                                  disabled={isCompleted || isDeleted}
+                                >
+                                  <Delete />
+                                </IconButton>
+                              </span>
+                            </Tooltip>
+                          </Box>
+                        );
+                      }
                     }
                   ]}
                   disableRowSelectionOnClick
@@ -709,6 +735,35 @@ const VisitsManagementPage = () => {
                 </Grid>
               )}
               
+              {/* Histórico de Exclusão (se aplicável) */}
+              {viewVisit.status === 'excluida' && viewVisit.deletion_reason && (
+                <Grid item xs={12}>
+                  <Alert severity="error" sx={{ mb: 2 }}>
+                    <Typography variant="h6" gutterBottom sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                      Visita Excluída
+                    </Typography>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Data de Exclusão</Typography>
+                      <Typography variant="body2">
+                        {viewVisit.deleted_at ? new Date(viewVisit.deleted_at).toLocaleString('pt-BR') : 'Não informado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Excluído por</Typography>
+                      <Typography variant="body2">
+                        {viewVisit.deletedBy?.name || viewVisit.deletedBy?.email || 'Usuário não identificado'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Justificativa da Exclusão</Typography>
+                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                        {viewVisit.deletion_reason}
+                      </Typography>
+                    </Box>
+                  </Alert>
+                </Grid>
+              )}
+              
               {/* Controle de Tempo */}
               <Grid item xs={12}>
                 <VisitTimeControl 
@@ -821,6 +876,7 @@ const VisitsManagementPage = () => {
                   <MenuItem value="concluida">Concluída</MenuItem>
                   <MenuItem value="cancelada">Cancelada</MenuItem>
                   <MenuItem value="reagendada">Reagendada</MenuItem>
+                  <MenuItem value="excluida">Excluída</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -872,20 +928,38 @@ const VisitsManagementPage = () => {
         </Alert>
       </Snackbar>
 
+      {/* Dialog de Justificativa de Exclusão */}
       <DeletionReasonDialog
         open={showDeletionDialog}
         title="Excluir Visita"
-        onCancel={() => { setShowDeletionDialog(false); setDeletionTarget(null); }}
+        helperText="Confirme a exclusão da visita. Informe um motivo (mínimo 10 caracteres)."
+        onCancel={() => {
+          setShowDeletionDialog(false);
+          setDeletionTarget(null);
+        }}
         onConfirm={async (reason) => {
           try {
-            const visitId = deletionTarget?.id;
-            await api.delete(`/visits/${visitId}`, { data: { deletion_reason: reason } });
-            notifyVisitDeleted(visitId);
-            setSnackbar({ open: true, message: 'Visita excluída com sucesso!', severity: 'success' });
+            await api.delete(`/visits/${deletionTarget.id}`, {
+              data: { deletion_reason: reason }
+            });
+            
+            setSnackbar({
+              open: true,
+              message: 'Visita excluída com sucesso!',
+              severity: 'success'
+            });
+            
+            // Notificar sincronização e recarregar lista
+            notifyVisitDeleted(deletionTarget.id);
             fetchVisits();
           } catch (error) {
-            const msg = error.response?.data?.error || error.message || 'Falha ao excluir visita';
-            setSnackbar({ open: true, message: msg, severity: 'error' });
+            console.error('Erro ao excluir visita:', error);
+            const msg = error.response?.data?.error || error.response?.data?.message || 'Falha ao excluir visita';
+            setSnackbar({
+              open: true,
+              message: msg,
+              severity: 'error'
+            });
           } finally {
             setShowDeletionDialog(false);
             setDeletionTarget(null);
