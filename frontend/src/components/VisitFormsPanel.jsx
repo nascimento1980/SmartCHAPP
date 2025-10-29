@@ -83,7 +83,7 @@ const SignatureCapture = ({ label, onUpload, hasValue }) => {
   )
 }
 
-const VisitFormsPanel = ({ visit }) => {
+const VisitFormsPanel = ({ visit, readOnly = false }) => {
   const [forms, setForms] = useState([])
   const [selectedForm, setSelectedForm] = useState('')
   const [formDef, setFormDef] = useState(null)
@@ -322,7 +322,9 @@ const VisitFormsPanel = ({ visit }) => {
     const commonProps = {
       fullWidth: true,
       value: values[field.name] ?? '',
-      onChange: (e) => setValues(prev => ({ ...prev, [field.name]: e.target.value }))
+      onChange: readOnly ? undefined : (e) => setValues(prev => ({ ...prev, [field.name]: e.target.value })),
+      disabled: readOnly,
+      InputProps: readOnly ? { readOnly: true } : undefined
     }
     switch (field.type) {
       case 'text':
@@ -342,12 +344,13 @@ const VisitFormsPanel = ({ visit }) => {
         )
       case 'select':
         return (
-          <FormControl fullWidth>
+          <FormControl fullWidth disabled={readOnly}>
             <InputLabel>{field.label}</InputLabel>
             <Select
               value={values[field.name] || ''}
               label={field.label}
-              onChange={(e) => setValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+              onChange={readOnly ? undefined : (e) => setValues(prev => ({ ...prev, [field.name]: e.target.value }))}
+              readOnly={readOnly}
             >
               {(field.options || []).map(opt => (
                 <MenuItem key={opt} value={opt}>{opt}</MenuItem>
@@ -515,17 +518,22 @@ const VisitFormsPanel = ({ visit }) => {
         })()}
 
         <Box sx={{ display: 'flex', gap: 1, mt: 2, flexWrap: 'wrap' }}>
-          <Button variant="contained" onClick={submitForm} disabled={loading}>Salvar</Button>
-          <Button variant="outlined" startIcon={<PictureAsPdf />} onClick={openPdf} disabled={!lastSubmissionId || loading}>PDF</Button>
+          {!readOnly && (
+            <Button variant="contained" onClick={submitForm} disabled={loading}>Salvar</Button>
+          )}
+          <Button variant="outlined" startIcon={<PictureAsPdf />} onClick={openPdf} disabled={!lastSubmissionId || loading}>
+            {readOnly ? 'Exportar PDF' : 'PDF'}
+          </Button>
           <TextField
             size="small"
             placeholder="email@cliente.com"
             value={emailTo}
             onChange={(e) => setEmailTo(e.target.value)}
             sx={{ minWidth: 220 }}
+            disabled={!lastSubmissionId}
           />
-          <Button variant="outlined" startIcon={<Send />} onClick={sendEmail} disabled={!lastSubmissionId || loading}>Email</Button>
-          <Button variant="outlined" startIcon={<Share />} onClick={shareWhatsApp} disabled={!lastSubmissionId}>WhatsApp</Button>
+          <Button variant="outlined" startIcon={<Send />} onClick={sendEmail} disabled={!lastSubmissionId || loading}>Enviar Email</Button>
+          <Button variant="outlined" startIcon={<Share />} onClick={shareWhatsApp} disabled={!lastSubmissionId}>Compartilhar WhatsApp</Button>
         </Box>
 
         <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>

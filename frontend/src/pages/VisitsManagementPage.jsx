@@ -673,126 +673,246 @@ const VisitsManagementPage = () => {
             <Avatar sx={{ bgcolor: `${typeColors[viewVisit?.type] || 'default'}.main` }}>
               {viewVisit && typeIcons[viewVisit.type]}
             </Avatar>
-            Detalhes da Visita
+            {viewVisit?.status === 'concluida' ? 'Resumo da Visita Concluída' : 'Detalhes da Visita'}
           </Box>
         </DialogTitle>
         <DialogContent>
           {viewVisit && (
-            <Grid container spacing={3} sx={{ mt: 1 }}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="h6" gutterBottom>Informações da Visita</Typography>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="textSecondary">Título</Typography>
-                  <Typography variant="body1">{viewVisit.title}</Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="textSecondary">Tipo</Typography>
-                  <Typography variant="body1">
-                    {viewVisit.type === 'tecnica' ? 'Visita Técnica' : 
-                     viewVisit.type === 'comercial' ? 'Visita Comercial' : 
-                     viewVisit.type === 'instalacao' ? 'Instalação' : 'Visita'}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="textSecondary">Data e Hora</Typography>
-                  <Typography variant="body1">
-                    {formatDate(viewVisit.scheduled_date)} às {formatTime(viewVisit.scheduled_time)}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="textSecondary">Status</Typography>
-                  <Chip
-                    icon={statusIcons[viewVisit.status]}
-                    label={viewVisit.status}
-                    color={statusColors[viewVisit.status] || 'default'}
-                    size="small"
-                  />
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="h6" gutterBottom>Cliente e Local</Typography>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="textSecondary">Cliente</Typography>
-                  <Typography variant="body1">
-                    {viewVisit.client?.company_name || viewVisit.lead?.company_name || 'Cliente não definido'}
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="textSecondary">Endereço</Typography>
-                  <Typography variant="body1">{viewVisit.address || 'Endereço não informado'}</Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" color="textSecondary">Responsável</Typography>
-                  <Typography variant="body1">
-                    {viewVisit.responsible?.name || 'Não atribuído'}
-                  </Typography>
-                </Box>
-              </Grid>
-              {viewVisit.notes && (
-                <Grid item xs={12}>
-                  <Typography variant="h6" gutterBottom>Observações</Typography>
-                  <Typography variant="body1">{viewVisit.notes}</Typography>
+            <>
+              {/* VISITA CONCLUÍDA - Resumo Executivo */}
+              {viewVisit.status === 'concluida' ? (
+                <Grid container spacing={3} sx={{ mt: 1 }}>
+                  {/* Informações Básicas */}
+                  <Grid item xs={12}>
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                        ✓ Visita Finalizada com Sucesso
+                      </Typography>
+                    </Alert>
+                  </Grid>
+
+                  {/* Resumo Executivo */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom color="primary">
+                          Informações da Visita
+                        </Typography>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Título</Typography>
+                          <Typography variant="body1" fontWeight="medium">{viewVisit.title}</Typography>
+                        </Box>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Data Agendada</Typography>
+                          <Typography variant="body1">
+                            {formatDate(viewVisit.scheduled_date)} às {formatTime(viewVisit.scheduled_time)}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Cliente</Typography>
+                          <Typography variant="body1">
+                            {viewVisit.client?.company_name || viewVisit.lead?.company_name || 'Não informado'}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Local</Typography>
+                          <Typography variant="body2">{viewVisit.address || 'Não informado'}</Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="subtitle2" color="textSecondary">Responsável</Typography>
+                          <Typography variant="body1">{viewVisit.responsible?.name || 'Não atribuído'}</Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Check-in / Check-out */}
+                  <Grid item xs={12} md={6}>
+                    <Card variant="outlined">
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom color="primary">
+                          Registro de Presença
+                        </Typography>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Check-in</Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {viewVisit.checkin_time ? new Date(viewVisit.checkin_time).toLocaleString('pt-BR') : 'Não registrado'}
+                          </Typography>
+                          {viewVisit.notes_checkin && (
+                            <Typography variant="caption" display="block" color="textSecondary" sx={{ mt: 0.5 }}>
+                              {viewVisit.notes_checkin}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Check-out</Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {viewVisit.checkout_time ? new Date(viewVisit.checkout_time).toLocaleString('pt-BR') : 'Não registrado'}
+                          </Typography>
+                          {viewVisit.notes_checkout && (
+                            <Typography variant="caption" display="block" color="textSecondary" sx={{ mt: 0.5 }}>
+                              {viewVisit.notes_checkout}
+                            </Typography>
+                          )}
+                        </Box>
+                        <Box sx={{ mb: 1.5 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Duração</Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {viewVisit.actual_duration ? `${viewVisit.actual_duration} horas` : 'Não calculada'}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="subtitle2" color="textSecondary">Distância Percorrida</Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {viewVisit.travel_distance ? `${viewVisit.travel_distance} km` : 'Não registrada'}
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+
+                  {/* Checklists e Formulários */}
+                  <Grid item xs={12}>
+                    <VisitFormsPanel visit={viewVisit} readOnly={true} />
+                  </Grid>
+
+                  {/* Observações */}
+                  {viewVisit.completion_notes && (
+                    <Grid item xs={12}>
+                      <Card variant="outlined">
+                        <CardContent>
+                          <Typography variant="h6" gutterBottom color="primary">
+                            Observações Finais
+                          </Typography>
+                          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {viewVisit.completion_notes}
+                          </Typography>
+                        </CardContent>
+                      </Card>
+                    </Grid>
+                  )}
+                </Grid>
+              ) : (
+                /* VISITA NÃO CONCLUÍDA - Visualização Normal */
+                <Grid container spacing={3} sx={{ mt: 1 }}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" gutterBottom>Informações da Visita</Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Título</Typography>
+                      <Typography variant="body1">{viewVisit.title}</Typography>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Tipo</Typography>
+                      <Typography variant="body1">
+                        {viewVisit.type === 'tecnica' ? 'Visita Técnica' : 
+                         viewVisit.type === 'comercial' ? 'Visita Comercial' : 
+                         viewVisit.type === 'instalacao' ? 'Instalação' : 'Visita'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Data e Hora</Typography>
+                      <Typography variant="body1">
+                        {formatDate(viewVisit.scheduled_date)} às {formatTime(viewVisit.scheduled_time)}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Status</Typography>
+                      <Chip
+                        icon={statusIcons[viewVisit.status]}
+                        label={viewVisit.status}
+                        color={statusColors[viewVisit.status] || 'default'}
+                        size="small"
+                      />
+                    </Box>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" gutterBottom>Cliente e Local</Typography>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Cliente</Typography>
+                      <Typography variant="body1">
+                        {viewVisit.client?.company_name || viewVisit.lead?.company_name || 'Cliente não definido'}
+                      </Typography>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Endereço</Typography>
+                      <Typography variant="body1">{viewVisit.address || 'Endereço não informado'}</Typography>
+                    </Box>
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" color="textSecondary">Responsável</Typography>
+                      <Typography variant="body1">
+                        {viewVisit.responsible?.name || 'Não atribuído'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  {viewVisit.notes && (
+                    <Grid item xs={12}>
+                      <Typography variant="h6" gutterBottom>Observações</Typography>
+                      <Typography variant="body1">{viewVisit.notes}</Typography>
+                    </Grid>
+                  )}
+                  
+                  {/* Histórico de Exclusão (se aplicável) */}
+                  {viewVisit.status === 'excluida' && viewVisit.deletion_reason && (
+                    <Grid item xs={12}>
+                      <Alert severity="error" sx={{ mb: 2 }}>
+                        <Typography variant="h6" gutterBottom sx={{ color: 'error.main', fontWeight: 'bold' }}>
+                          Visita Excluída
+                        </Typography>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Data de Exclusão</Typography>
+                          <Typography variant="body2">
+                            {viewVisit.deleted_at ? new Date(viewVisit.deleted_at).toLocaleString('pt-BR') : 'Não informado'}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Excluído por</Typography>
+                          <Typography variant="body2">
+                            {viewVisit.deletedBy?.name || viewVisit.deletedBy?.email || 'Usuário não identificado'}
+                          </Typography>
+                        </Box>
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="subtitle2" color="textSecondary">Justificativa da Exclusão</Typography>
+                          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {viewVisit.deletion_reason}
+                          </Typography>
+                        </Box>
+                      </Alert>
+                    </Grid>
+                  )}
+                  
+                  {/* Controle de Tempo - Apenas para visitas não concluídas */}
+                  <Grid item xs={12}>
+                    <VisitTimeControl 
+                      visit={viewVisit} 
+                      onVisitUpdated={(updatedVisit) => {
+                        setVisits(prevVisits => 
+                          prevVisits.map(v => v.id === updatedVisit.id ? updatedVisit : v)
+                        );
+                        setViewVisit(updatedVisit);
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <VisitFormsPanel visit={viewVisit} />
+                  </Grid>
                 </Grid>
               )}
-              
-              {/* Histórico de Exclusão (se aplicável) */}
-              {viewVisit.status === 'excluida' && viewVisit.deletion_reason && (
-                <Grid item xs={12}>
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    <Typography variant="h6" gutterBottom sx={{ color: 'error.main', fontWeight: 'bold' }}>
-                      Visita Excluída
-                    </Typography>
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="subtitle2" color="textSecondary">Data de Exclusão</Typography>
-                      <Typography variant="body2">
-                        {viewVisit.deleted_at ? new Date(viewVisit.deleted_at).toLocaleString('pt-BR') : 'Não informado'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="subtitle2" color="textSecondary">Excluído por</Typography>
-                      <Typography variant="body2">
-                        {viewVisit.deletedBy?.name || viewVisit.deletedBy?.email || 'Usuário não identificado'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="subtitle2" color="textSecondary">Justificativa da Exclusão</Typography>
-                      <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
-                        {viewVisit.deletion_reason}
-                      </Typography>
-                    </Box>
-                  </Alert>
-                </Grid>
-              )}
-              
-              {/* Controle de Tempo */}
-              <Grid item xs={12}>
-                <VisitTimeControl 
-                  visit={viewVisit} 
-                  onVisitUpdated={(updatedVisit) => {
-                    setVisits(prevVisits => 
-                      prevVisits.map(v => v.id === updatedVisit.id ? updatedVisit : v)
-                    );
-                    setViewVisit(updatedVisit);
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <VisitFormsPanel visit={viewVisit} />
-              </Grid>
-            </Grid>
+            </>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setViewVisit(null)}>Fechar</Button>
-          <Button 
-            onClick={() => {
-              setViewVisit(null);
-              handleOpenDialog(viewVisit);
-            }} 
-            variant="contained"
-          >
-            Editar
-          </Button>
+          {viewVisit?.status !== 'concluida' && viewVisit?.status !== 'excluida' && (
+            <Button 
+              onClick={() => {
+                setViewVisit(null);
+                handleOpenDialog(viewVisit);
+              }} 
+              variant="contained"
+            >
+              Editar
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
