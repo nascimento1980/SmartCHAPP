@@ -15,10 +15,17 @@ router.get('/submissions/:id/pdf', async (req, res) => {
     const form = await Form.findByPk(submission.form_id)
     if (!form) return res.status(404).json({ error: 'Formulário não encontrado' })
     
-    // Buscar configurações da empresa
+    // Buscar TODAS as configurações da empresa
     const companySettings = await CompanySetting.findAll({
       where: {
-        setting_key: ['companyName', 'companyLegalName', 'companyEmail', 'companyPhone', 'companySite', 'companyPrimaryColor', 'companySecondaryColor', 'logoMime', 'logoData']
+        setting_key: [
+          'companyName', 'companyLegalName', 'companyTaxId',
+          'companyEmail', 'companyPhone', 'companySite',
+          'companyAddress', 'companyNumber', 'companyComplement',
+          'companyNeighborhood', 'companyCity', 'companyState', 'companyZip',
+          'companyPrimaryColor', 'companySecondaryColor',
+          'logoMime', 'logoData'
+        ]
       }
     })
     
@@ -36,6 +43,17 @@ router.get('/submissions/:id/pdf', async (req, res) => {
     company.companyName = company.companyName || 'Clean & Health'
     company.companyPrimaryColor = company.companyPrimaryColor || '#00AA66'
     company.companySecondaryColor = company.companySecondaryColor || '#003366'
+    
+    // Montar endereço completo
+    const addressParts = [
+      company.companyAddress,
+      company.companyNumber,
+      company.companyComplement,
+      company.companyNeighborhood,
+      company.companyCity && company.companyState ? `${company.companyCity}/${company.companyState}` : (company.companyCity || company.companyState),
+      company.companyZip ? `CEP: ${company.companyZip}` : null
+    ].filter(Boolean)
+    company.fullAddress = addressParts.join(', ')
 
     const PDFDocument = require('pdfkit')
     const doc = new PDFDocument({ 
@@ -56,6 +74,109 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       }
     }
     const drawDivider = () => { ensureSpace(12); doc.moveDown(0.3); doc.moveTo(PAGE.left, doc.y).lineTo(PAGE.right, doc.y).stroke(); doc.moveDown(0.6) }
+    
+    // FUNÇÃO UNIVERSAL: Desenhar cabeçalho da empresa em qualquer página
+    const drawCompanyHeader = (pageTitle = '') => {
+      // Fundo verde no topo
+      doc.save()
+      doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 50).fill()
+      doc.restore()
+      
+      // Logo ou nome da empresa
+      if (logoBuffer) {
+        try {
+          doc.image(logoBuffer, PAGE.left + 10, PAGE.top - 30, { width: 100, height: 35, fit: [100, 35] })
+        } catch (err) {
+          doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
+          doc.text(company.companyName, PAGE.left + 10, PAGE.top - 20)
+        }
+      } else {
+        doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
+        doc.text(company.companyName.toUpperCase(), PAGE.left + 10, PAGE.top - 20)
+      }
+      
+      // Título da página (se fornecido)
+      if (pageTitle) {
+        doc.font('Helvetica-Bold').fontSize(11).fillColor('#FFFFFF')
+        doc.text(pageTitle, PAGE.left + 200, PAGE.top - 18, { width: 300 })
+      }
+      
+      // Informações de contato no cabeçalho (lado direito)
+      doc.font('Helvetica').fontSize(6).fillColor('#FFFFFF')
+      let contactY = PAGE.top - 28
+      
+      if (company.companyTaxId) {
+        doc.text(`CNPJ: ${company.companyTaxId}`, PAGE.right - 150, contactY, { width: 140, align: 'right' })
+        contactY += 7
+      }
+      if (company.companyPhone) {
+        doc.text(`Tel: ${company.companyPhone}`, PAGE.right - 150, contactY, { width: 140, align: 'right' })
+        contactY += 7
+      }
+      if (company.companyEmail) {
+        doc.text(company.companyEmail, PAGE.right - 150, contactY, { width: 140, align: 'right' })
+      }
+      
+      // Resetar posição e cores
+      doc.fillColor('#000000').font('Helvetica').fontSize(10)
+      doc.y = PAGE.top + 15
+    }
+    
+    // FUNÇÃO UNIVERSAL: Desenhar rodapé da empresa
+    const drawCompanyFooter = () => {
+      doc.moveDown(1)
+      ensureSpace(60)
+      
+      const footerY = doc.y
+      
+      // Linha superior verde
+      doc.save()
+      doc.strokeColor(company.companyPrimaryColor).lineWidth(1)
+      doc.moveTo(PAGE.left, footerY).lineTo(PAGE.right, footerY).stroke()
+      doc.restore()
+      
+      // Nome da empresa
+      doc.fontSize(8).fillColor('#333333').font('Helvetica-Bold')
+      doc.text(company.companyName || 'Clean & Health', PAGE.left, footerY + 8, { width: PAGE.right - PAGE.left, align: 'center' })
+      
+      // Razão social e CNPJ
+      doc.fontSize(6).fillColor('#666666').font('Helvetica')
+      const legalInfo = []
+      if (company.companyLegalName && company.companyLegalName !== company.companyName) {
+        legalInfo.push(company.companyLegalName)
+      }
+      if (company.companyTaxId) {
+        legalInfo.push(`CNPJ: ${company.companyTaxId}`)
+      }
+      if (legalInfo.length > 0) {
+        doc.text(legalInfo.join(' - '), PAGE.left, footerY + 17, { width: PAGE.right - PAGE.left, align: 'center' })
+      }
+      
+      // Endereço
+      if (company.fullAddress) {
+        doc.fontSize(6).fillColor('#999999')
+        doc.text(company.fullAddress, PAGE.left, footerY + (legalInfo.length > 0 ? 25 : 17), { width: PAGE.right - PAGE.left, align: 'center' })
+      }
+      
+      // Contatos
+      const contactInfo = [
+        company.companyPhone ? `Tel: ${company.companyPhone}` : null,
+        company.companyEmail || null,
+        company.companySite || null
+      ].filter(Boolean).join(' | ')
+      
+      if (contactInfo) {
+        doc.fontSize(6).fillColor('#666666')
+        doc.text(contactInfo, PAGE.left, footerY + (company.fullAddress ? 33 : 25), { width: PAGE.right - PAGE.left, align: 'center' })
+      }
+      
+      // Data de emissão
+      doc.fontSize(6).fillColor('#999999')
+      doc.text(`Documento Confidencial | Emitido em: ${new Date().toLocaleDateString('pt-BR')} as ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, 
+               PAGE.left, footerY + 43, { width: PAGE.right - PAGE.left, align: 'center' })
+      
+      doc.fillColor('#000000').font('Helvetica').fontSize(10)
+    }
     const drawSectionTitle = (title) => {
       ensureSpace(25)
       const titleY = doc.y
@@ -216,12 +337,23 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       doc.y = startY + boxH + 10
     }
 
-    // Header
-    doc.fontSize(16).fillColor('#003366').text(form.title, { underline: true })
-    doc.fillColor('#000')
-    doc.moveDown(0.5)
-    doc.fontSize(10).text(`Enviado em: ${new Date(submission.created_at).toLocaleString('pt-BR')}`)
-    doc.moveDown(0.5)
+    // Header UNIVERSAL com identidade da empresa
+    drawCompanyHeader()
+    
+    // Título do formulário
+    doc.font('Helvetica-Bold').fontSize(14).fillColor(company.companySecondaryColor)
+    doc.text(form.title, PAGE.left, doc.y, { align: 'center' })
+    
+    // Data de submissão
+    doc.font('Helvetica').fontSize(8).fillColor('#999999')
+    doc.text(`Enviado em: ${new Date(submission.created_at).toLocaleString('pt-BR')}`, PAGE.left, doc.y + 20, { align: 'right' })
+    
+    // Linha separadora
+    doc.strokeColor(company.companyPrimaryColor).lineWidth(1)
+    doc.moveTo(PAGE.left, doc.y + 30).lineTo(PAGE.right, doc.y + 30).stroke()
+    
+    doc.fillColor('#000000').font('Helvetica').fontSize(10)
+    doc.y = doc.y + 40
 
     const data = submission.data || {}
 
@@ -264,47 +396,8 @@ router.get('/submissions/:id/pdf', async (req, res) => {
 
     // Renderização especial para Hotelaria - CheckList Mestre de Diagnóstico e Viabilidade
     if (form.title && form.title.toLowerCase().includes('hotelaria')) {
-      // ====================================
-      // CABEÇALHO PADRÃO DA EMPRESA
-      // ====================================
-      
-      // Fundo verde no topo (conforme imagem)
-      doc.save()
-      doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 60).fill()
-      doc.restore()
-      
-      // Logo da empresa (se existir)
-      if (logoBuffer) {
-        try {
-          doc.image(logoBuffer, PAGE.left + 10, PAGE.top - 30, { width: 120, height: 40, fit: [120, 40] })
-        } catch (err) {
-          // Se falhar, usar texto
-          doc.font('Helvetica-Bold').fontSize(16).fillColor('#FFFFFF')
-          doc.text(company.companyName, PAGE.left + 10, PAGE.top - 20)
-        }
-      } else {
-        // Sem logo, usar nome da empresa em branco
-        doc.font('Helvetica-Bold').fontSize(16).fillColor('#FFFFFF')
-        doc.text(company.companyName.toUpperCase(), PAGE.left + 10, PAGE.top - 20)
-      }
-      
-      // Informações de contato no cabeçalho
-      doc.font('Helvetica').fontSize(7).fillColor('#FFFFFF')
-      let contactY = PAGE.top - 25
-      if (company.companyPhone) {
-        doc.text(company.companyPhone, PAGE.right - 120, contactY, { width: 110, align: 'right' })
-        contactY += 10
-      }
-      if (company.companyEmail) {
-        doc.text(company.companyEmail, PAGE.right - 120, contactY, { width: 110, align: 'right' })
-        contactY += 10
-      }
-      if (company.companySite) {
-        doc.text(company.companySite, PAGE.right - 120, contactY, { width: 110, align: 'right' })
-      }
-      
-      // Área branca abaixo do cabeçalho
-      doc.y = PAGE.top + 30
+      // Usar cabeçalho universal da empresa
+      drawCompanyHeader()
       
       // Título do documento
       doc.font('Helvetica-Bold').fontSize(14).fillColor(company.companySecondaryColor)
@@ -381,29 +474,8 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       setores.forEach(({ titulo, icone, prefix }, index) => {
         doc.addPage()
         
-        // Repetir cabeçalho verde em todas as páginas
-        doc.save()
-        doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 50).fill()
-        doc.restore()
-        
-        if (logoBuffer) {
-          try {
-            doc.image(logoBuffer, PAGE.left + 10, PAGE.top - 30, { width: 100, height: 35, fit: [100, 35] })
-          } catch (err) {
-            doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
-            doc.text(company.companyName, PAGE.left + 10, PAGE.top - 20)
-          }
-        } else {
-          doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
-          doc.text(company.companyName.toUpperCase(), PAGE.left + 10, PAGE.top - 20)
-        }
-        
-        // Título do setor no cabeçalho
-        doc.font('Helvetica-Bold').fontSize(12).fillColor('#FFFFFF')
-        doc.text(`${index + 1}. ${titulo}`, PAGE.left + 200, PAGE.top - 18, { width: 300 })
-        
-        doc.fillColor('#000000').font('Helvetica').fontSize(10)
-        doc.y = PAGE.top + 20
+        // Usar cabeçalho universal com título do setor
+        drawCompanyHeader(`${index + 1}. ${titulo}`)
 
         // Diagnóstico Atual
         doc.font('Helvetica-Bold').fontSize(10).fillColor('#333333')
@@ -460,28 +532,8 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       // Página de Conclusão
       doc.addPage()
       
-      // Repetir cabeçalho verde
-      doc.save()
-      doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 50).fill()
-      doc.restore()
-      
-      if (logoBuffer) {
-        try {
-          doc.image(logoBuffer, PAGE.left + 10, PAGE.top - 30, { width: 100, height: 35, fit: [100, 35] })
-        } catch (err) {
-          doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
-          doc.text(company.companyName, PAGE.left + 10, PAGE.top - 20)
-        }
-      } else {
-        doc.font('Helvetica-Bold').fontSize(14).fillColor('#FFFFFF')
-        doc.text(company.companyName.toUpperCase(), PAGE.left + 10, PAGE.top - 20)
-      }
-      
-      doc.font('Helvetica-Bold').fontSize(12).fillColor('#FFFFFF')
-      doc.text('CONCLUSAO', PAGE.left + 200, PAGE.top - 18)
-      
-      doc.fillColor('#000000').font('Helvetica').fontSize(10)
-      doc.y = PAGE.top + 20
+      // Usar cabeçalho universal
+      drawCompanyHeader('CONCLUSAO')
       
       drawSectionTitle('ANÁLISE CONSOLIDADA E RECOMENDAÇÕES')
       
@@ -558,33 +610,8 @@ router.get('/submissions/:id/pdf', async (req, res) => {
         { label: 'Assinatura do Responsável do Hotel', key: 'assinatura_hotel' },
       ])
 
-      // RODAPÉ COM INFORMAÇÕES DA EMPRESA
-      doc.moveDown(1)
-      ensureSpace(40)
-      
-      const footerY = doc.y
-      
-      // Linha superior verde
-      doc.save()
-      doc.strokeColor(company.companyPrimaryColor).lineWidth(1)
-      doc.moveTo(PAGE.left, footerY).lineTo(PAGE.right, footerY).stroke()
-      doc.restore()
-      
-      // Texto do rodapé
-      doc.fontSize(7).fillColor('#666666').font('Helvetica')
-      doc.text(`Documento Confidencial - ${company.companyName || 'Clean & Health'}`, 
-               PAGE.left, footerY + 8, { width: PAGE.right - PAGE.left, align: 'center' })
-      
-      doc.fontSize(7).fillColor('#999999')
-      const footerInfo = [
-        `Emitido em: ${new Date().toLocaleDateString('pt-BR')}`,
-        company.companySite || '',
-        company.companyEmail || ''
-      ].filter(Boolean).join(' | ')
-      
-      doc.text(footerInfo, PAGE.left, footerY + 20, { width: PAGE.right - PAGE.left, align: 'center' })
-      
-      doc.fillColor('#000000').font('Helvetica')
+      // Usar rodapé universal da empresa
+      drawCompanyFooter()
     } else if (form.title && form.title.toLowerCase().includes('smart de higieniza')) {
       // Cabeçalho
       drawSectionTitle('Cabeçalho')
@@ -659,6 +686,7 @@ router.get('/submissions/:id/pdf', async (req, res) => {
         { label: 'Assinatura do Consultor', key: 'assinatura_consultor' },
       ])
     } else {
+      // PDF GENÉRICO - Qualquer outro formulário
       Object.keys(data).forEach((k) => {
         const v = data[k]
         if (typeof v === 'string' && v.startsWith('http') && v.includes('/static/uploads/')) {
@@ -670,6 +698,9 @@ router.get('/submissions/:id/pdf', async (req, res) => {
           doc.fontSize(12).text(`${k}: ${typeof v === 'boolean' ? (v ? 'Sim' : 'Não') : (v ?? '')}`)
         }
       })
+      
+      // Adicionar rodapé universal para PDFs genéricos também
+      drawCompanyFooter()
     }
 
     doc.end()
