@@ -613,35 +613,53 @@ router.get('/submissions/:id/pdf', async (req, res) => {
       // Usar rodapé universal da empresa
       drawCompanyFooter()
     } else if (form.title && form.title.toLowerCase().includes('smart de higieniza')) {
-      // Cabeçalho
-      drawSectionTitle('Cabeçalho')
+      // FORMULÁRIO SMART DE HIGIENIZAÇÃO - CHECKLIST TÉCNICO-COMERCIAL
+      
+      // Usar cabeçalho universal
+      drawCompanyHeader()
+      
+      // Título do documento
+      doc.font('Helvetica-Bold').fontSize(14).fillColor(company.companySecondaryColor)
+      doc.text('FORMULARIO SMART DE HIGIENIZACAO', PAGE.left, doc.y, { align: 'center' })
+      doc.font('Helvetica').fontSize(11).fillColor('#666666')
+      doc.text('Checklist Tecnico-Comercial', PAGE.left, doc.y + 20, { align: 'center' })
+      
+      // Linha separadora
+      doc.strokeColor(company.companyPrimaryColor).lineWidth(1)
+      doc.moveTo(PAGE.left, doc.y + 35).lineTo(PAGE.right, doc.y + 35).stroke()
+      
+      doc.fillColor('#000000').font('Helvetica').fontSize(10)
+      doc.y = doc.y + 45
+      
+      // Informações do Cliente
+      drawSectionTitle('INFORMACOES DO CLIENTE')
       drawTable(['Campo','Valor'], [
-        ['Hotel / Cliente', data['cliente']],
-        ['Categoria', data['tipo_cliente']],
-        ['Responsável Higienização', data['responsavel']],
-        ['Consultor', data['consultor']],
-        ['Data', data['data']],
+        ['Hotel / Cliente', normalizeVal(data['cliente'])],
+        ['Categoria', normalizeVal(data['tipo_cliente'])],
+        ['Responsavel Higienizacao', normalizeVal(data['responsavel'])],
+        ['Consultor', normalizeVal(data['consultor'])],
+        ['Data da Visita', normalizeVal(data['data'])],
       ], [170, PAGE.right - PAGE.left - 170])
 
       // 1) Apresentação da Empresa
-      drawSectionTitle('1) Apresentação da Empresa')
+      drawSectionTitle('1) APRESENTACAO DA EMPRESA')
       drawTable(['Item','Valor'], [
-        ['Apresentação Realizada?', data['apresentacao_realizada']],
-        ['Grau de Interesse', data['grau_interesse']],
-        ['Observações / Expectativas', data['observacoes_expectativas']],
+        ['Apresentacao Realizada?', normalizeVal(data['apresentacao_realizada'])],
+        ['Grau de Interesse', normalizeVal(data['grau_interesse'])],
+        ['Observacoes / Expectativas', normalizeVal(data['observacoes_expectativas'])],
       ], [220, PAGE.right - PAGE.left - 220])
 
       // 2) Diagnóstico da Situação Atual
-      drawSectionTitle('2) Diagnóstico da Situação Atual')
-      drawTable(['Item','Resposta','Aval./Conf.'], [
-        ['Contrato vigente com outro fornecedor?', data['contrato_vigente'], ''],
-        ['Satisfação com resultados atuais', data['satisfacao_atual'], data['satisfacao_atual_avaliacao']],
-        ['Produtos atuais são biodegradáveis?', data['produtos_biodegradaveis'], data['produtos_biodegradaveis_conformidade']],
-        ['Produtos atendem ANVISA/ABNT?', data['atende_normas'], data['atende_normas_conf']],
-        ['Controle de diluição e treinamento', data['controle_diluicao'], data['controle_diluicao_conf']],
-        ['Suporte técnico do fornecedor', data['suporte_tecnico'], data['suporte_tecnico_conf']],
-        ['Custo-benefício percebido', data['custo_beneficio'], data['custo_beneficio_avaliacao']],
-        ['Pontos fortes e fracos do fornecedor atual', data['fornecedor_pontos'], ''],
+      drawSectionTitle('2) DIAGNOSTICO DA SITUACAO ATUAL')
+      drawTable(['Item','Resposta','Avaliacao/Conformidade'], [
+        ['Contrato vigente com outro fornecedor?', normalizeVal(data['contrato_vigente']), ''],
+        ['Satisfacao com resultados atuais', normalizeVal(data['satisfacao_atual']), normalizeVal(data['satisfacao_atual_avaliacao'])],
+        ['Produtos atuais sao biodegradaveis?', normalizeVal(data['produtos_biodegradaveis']), normalizeVal(data['produtos_biodegradaveis_conformidade'])],
+        ['Produtos atendem ANVISA/ABNT?', normalizeVal(data['atende_normas']), normalizeVal(data['atende_normas_conf'])],
+        ['Controle de diluicao e treinamento', normalizeVal(data['controle_diluicao']), normalizeVal(data['controle_diluicao_conf'])],
+        ['Suporte tecnico do fornecedor', normalizeVal(data['suporte_tecnico']), normalizeVal(data['suporte_tecnico_conf'])],
+        ['Custo-beneficio percebido', normalizeVal(data['custo_beneficio']), normalizeVal(data['custo_beneficio_avaliacao'])],
+        ['Pontos fortes e fracos do fornecedor atual', normalizeVal(data['fornecedor_pontos']), ''],
       ], [230, 140, PAGE.right - PAGE.left - 230 - 140])
 
       // 3) Oportunidades SMART
@@ -685,6 +703,9 @@ router.get('/submissions/:id/pdf', async (req, res) => {
         { label: 'Assinatura do Cliente', key: 'assinatura_cliente' },
         { label: 'Assinatura do Consultor', key: 'assinatura_consultor' },
       ])
+      
+      // Rodapé universal
+      drawCompanyFooter()
     } else {
       // PDF GENÉRICO - Qualquer outro formulário
       Object.keys(data).forEach((k) => {
