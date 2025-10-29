@@ -55,6 +55,10 @@ const SettingsPage = () => {
   const [companyLatitude, setCompanyLatitude] = useState('')
   const [companyLongitude, setCompanyLongitude] = useState('')
   const [companyLogo, setCompanyLogo] = useState('')
+  const [companyLogoWhiteBg, setCompanyLogoWhiteBg] = useState('')
+  const [companyLogoBlueBg, setCompanyLogoBlueBg] = useState('')
+  const [companyLogoGreenBg, setCompanyLogoGreenBg] = useState('')
+  const [companyLogoBlackBg, setCompanyLogoBlackBg] = useState('')
   const [companyPrimaryColor, setCompanyPrimaryColor] = useState('#2E7D32')
   const [companySecondaryColor, setCompanySecondaryColor] = useState('#1976D2')
 
@@ -145,6 +149,14 @@ const SettingsPage = () => {
 
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [uploadingWhiteBg, setUploadingWhiteBg] = useState(false)
+  const [uploadingBlueBg, setUploadingBlueBg] = useState(false)
+  const [uploadingGreenBg, setUploadingGreenBg] = useState(false)
+  const [uploadingBlackBg, setUploadingBlackBg] = useState(false)
+  const [objectUrlWhiteBg, setObjectUrlWhiteBg] = useState('')
+  const [objectUrlBlueBg, setObjectUrlBlueBg] = useState('')
+  const [objectUrlGreenBg, setObjectUrlGreenBg] = useState('')
+  const [objectUrlBlackBg, setObjectUrlBlackBg] = useState('')
 
 
   const handleSaveCompany = async () => {
@@ -218,6 +230,114 @@ const SettingsPage = () => {
       enqueueSnackbar('Falha ao carregar logo', { variant: 'error' })
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleUploadLogoWhiteBg = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const toBase64 = (f) => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(f)
+    })
+    try {
+      setUploadingWhiteBg(true)
+      const fileBase64 = await toBase64(file)
+      await api.post('/settings/company/logo/white-bg', { fileBase64, filename: file.name })
+      const res = await api.get('/settings/company/logo/white-bg', { responseType: 'arraybuffer' })
+      const mime = res.headers['content-type'] || 'image/png'
+      const url = URL.createObjectURL(new Blob([res.data], { type: mime }))
+      if (objectUrlWhiteBg) URL.revokeObjectURL(objectUrlWhiteBg)
+      setObjectUrlWhiteBg(url)
+      setCompanyLogoWhiteBg(url)
+      enqueueSnackbar('Logo para fundo branco carregada', { variant: 'success' })
+    } catch (err) {
+      enqueueSnackbar('Falha ao carregar logo', { variant: 'error' })
+    } finally {
+      setUploadingWhiteBg(false)
+    }
+  }
+
+  const handleUploadLogoBlueBg = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const toBase64 = (f) => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(f)
+    })
+    try {
+      setUploadingBlueBg(true)
+      const fileBase64 = await toBase64(file)
+      await api.post('/settings/company/logo/blue-bg', { fileBase64, filename: file.name })
+      const res = await api.get('/settings/company/logo/blue-bg', { responseType: 'arraybuffer' })
+      const mime = res.headers['content-type'] || 'image/png'
+      const url = URL.createObjectURL(new Blob([res.data], { type: mime }))
+      if (objectUrlBlueBg) URL.revokeObjectURL(objectUrlBlueBg)
+      setObjectUrlBlueBg(url)
+      setCompanyLogoBlueBg(url)
+      enqueueSnackbar('Logo para fundo azul carregada', { variant: 'success' })
+    } catch (err) {
+      enqueueSnackbar('Falha ao carregar logo', { variant: 'error' })
+    } finally {
+      setUploadingBlueBg(false)
+    }
+  }
+
+  const handleUploadLogoGreenBg = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const toBase64 = (f) => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(f)
+    })
+    try {
+      setUploadingGreenBg(true)
+      const fileBase64 = await toBase64(file)
+      await api.post('/settings/company/logo/green-bg', { fileBase64, filename: file.name })
+      const res = await api.get('/settings/company/logo/green-bg', { responseType: 'arraybuffer' })
+      const mime = res.headers['content-type'] || 'image/png'
+      const url = URL.createObjectURL(new Blob([res.data], { type: mime }))
+      if (objectUrlGreenBg) URL.revokeObjectURL(objectUrlGreenBg)
+      setObjectUrlGreenBg(url)
+      setCompanyLogoGreenBg(url)
+      enqueueSnackbar('Logo para fundo verde carregada', { variant: 'success' })
+    } catch (err) {
+      enqueueSnackbar('Falha ao carregar logo', { variant: 'error' })
+    } finally {
+      setUploadingGreenBg(false)
+    }
+  }
+
+  const handleUploadLogoBlackBg = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const toBase64 = (f) => new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsDataURL(f)
+    })
+    try {
+      setUploadingBlackBg(true)
+      const fileBase64 = await toBase64(file)
+      await api.post('/settings/company/logo/black-bg', { fileBase64, filename: file.name })
+      const res = await api.get('/settings/company/logo/black-bg', { responseType: 'arraybuffer' })
+      const mime = res.headers['content-type'] || 'image/png'
+      const url = URL.createObjectURL(new Blob([res.data], { type: mime }))
+      if (objectUrlBlackBg) URL.revokeObjectURL(objectUrlBlackBg)
+      setObjectUrlBlackBg(url)
+      setCompanyLogoBlackBg(url)
+      enqueueSnackbar('Logo para fundo preto carregada', { variant: 'success' })
+    } catch (err) {
+      enqueueSnackbar('Falha ao carregar logo', { variant: 'error' })
+    } finally {
+      setUploadingBlackBg(false)
     }
   }
 
@@ -410,23 +530,80 @@ const SettingsPage = () => {
                 variant="outlined"
               />
 
+              {/* Logos para diferentes fundos */}
+              <Grid item xs={12}>
+                <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Logos da Empresa</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Carregue diferentes versões da logo para usar em fundos de cores diferentes. A logo apropriada será automaticamente selecionada nos PDFs.
+                </Typography>
+              </Grid>
+
               <Grid item xs={12} md={6}>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <TextField fullWidth label="Logo (URL)" value={companyLogo} onChange={(e) => setCompanyLogo(e.target.value)} />
+                  <TextField fullWidth label="Logo Principal (Legado)" value={companyLogo} onChange={(e) => setCompanyLogo(e.target.value)} disabled />
                   <Button variant="outlined" component="label" disabled={uploading}>{uploading ? 'Enviando...' : 'Carregar'}
                     <input type="file" accept="image/*" hidden onChange={handleUploadLogo} />
                   </Button>
                 </Stack>
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2, p: 1, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                   <Avatar src={companyLogo} variant="rounded" sx={{ width: 72, height: 72 }} />
-                  <Typography variant="caption" color="text.secondary">Pré-visualização da logo</Typography>
+                  <Typography variant="caption" color="text.secondary">Logo padrão (uso legado)</Typography>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField type="color" fullWidth label="Cor primária" value={companyPrimaryColor} onChange={(e) => setCompanyPrimaryColor(e.target.value)} />
+
+              <Grid item xs={12} md={6}>
+                <Button variant="outlined" component="label" fullWidth disabled={uploadingWhiteBg} sx={{ height: 56 }}>
+                  {uploadingWhiteBg ? 'Enviando...' : 'Logo para Fundo Branco (Colorida)'}
+                  <input type="file" accept="image/*" hidden onChange={handleUploadLogoWhiteBg} />
+                </Button>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2, p: 1, bgcolor: '#FFFFFF', border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                  <Avatar src={companyLogoWhiteBg} variant="rounded" sx={{ width: 72, height: 72 }} />
+                  <Typography variant="caption" color="text.secondary">Use logo colorida para fundo branco</Typography>
+                </Box>
               </Grid>
-              <Grid item xs={12} md={3}>
-                <TextField type="color" fullWidth label="Cor secundária" value={companySecondaryColor} onChange={(e) => setCompanySecondaryColor(e.target.value)} />
+
+              <Grid item xs={12} md={6}>
+                <Button variant="outlined" component="label" fullWidth disabled={uploadingBlueBg} sx={{ height: 56 }}>
+                  {uploadingBlueBg ? 'Enviando...' : 'Logo para Fundo Azul (Negativa)'}
+                  <input type="file" accept="image/*" hidden onChange={handleUploadLogoBlueBg} />
+                </Button>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2, p: 1, bgcolor: companySecondaryColor || '#1976D2', borderRadius: 1 }}>
+                  <Avatar src={companyLogoBlueBg} variant="rounded" sx={{ width: 72, height: 72 }} />
+                  <Typography variant="caption" sx={{ color: '#FFFFFF' }}>Use logo branca/negativa para fundo azul</Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Button variant="outlined" component="label" fullWidth disabled={uploadingGreenBg} sx={{ height: 56 }}>
+                  {uploadingGreenBg ? 'Enviando...' : 'Logo para Fundo Verde (Negativa)'}
+                  <input type="file" accept="image/*" hidden onChange={handleUploadLogoGreenBg} />
+                </Button>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2, p: 1, bgcolor: companyPrimaryColor || '#2E7D32', borderRadius: 1 }}>
+                  <Avatar src={companyLogoGreenBg} variant="rounded" sx={{ width: 72, height: 72 }} />
+                  <Typography variant="caption" sx={{ color: '#FFFFFF' }}>Use logo branca/negativa para fundo verde</Typography>
+                </Box>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Button variant="outlined" component="label" fullWidth disabled={uploadingBlackBg} sx={{ height: 56 }}>
+                  {uploadingBlackBg ? 'Enviando...' : 'Logo para Fundo Preto (Negativa)'}
+                  <input type="file" accept="image/*" hidden onChange={handleUploadLogoBlackBg} />
+                </Button>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 2, p: 1, bgcolor: '#000000', borderRadius: 1 }}>
+                  <Avatar src={companyLogoBlackBg} variant="rounded" sx={{ width: 72, height: 72 }} />
+                  <Typography variant="caption" sx={{ color: '#FFFFFF' }}>Use logo branca/negativa para fundo preto</Typography>
+                </Box>
+              </Grid>
+
+              {/* Cores da empresa */}
+              <Grid item xs={12}>
+                <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>Cores da Marca</Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField type="color" fullWidth label="Cor primária (Verde)" value={companyPrimaryColor} onChange={(e) => setCompanyPrimaryColor(e.target.value)} />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField type="color" fullWidth label="Cor secundária (Azul)" value={companySecondaryColor} onChange={(e) => setCompanySecondaryColor(e.target.value)} />
               </Grid>
                <Grid item xs={12}>
                  <Button

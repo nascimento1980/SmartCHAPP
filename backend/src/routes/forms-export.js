@@ -24,16 +24,21 @@ router.get('/submissions/:id/pdf', async (req, res) => {
           'companyAddress', 'companyNumber', 'companyComplement',
           'companyNeighborhood', 'companyCity', 'companyState', 'companyZip',
           'companyPrimaryColor', 'companySecondaryColor',
-          'logoMime', 'logoData'
+          'logoMime', 'logoData',
+          'logoWhiteBgMime', 'logoWhiteBgData',
+          'logoBlueBgMime', 'logoBlueBgData',
+          'logoGreenBgMime', 'logoGreenBgData',
+          'logoBlackBgMime', 'logoBlackBgData'
         ]
       }
     })
     
     const company = {}
-    let logoBuffer = null
+    const logos = {}
     companySettings.forEach(setting => {
-      if (setting.setting_key === 'logoData' && setting.setting_value) {
-        logoBuffer = Buffer.isBuffer(setting.setting_value) ? setting.setting_value : Buffer.from(setting.setting_value)
+      if (setting.setting_key.endsWith('Data') && setting.setting_value) {
+        const logoKey = setting.setting_key.replace('Data', '')
+        logos[logoKey] = Buffer.isBuffer(setting.setting_value) ? setting.setting_value : Buffer.from(setting.setting_value)
       } else {
         company[setting.setting_key] = setting.setting_value
       }
@@ -75,12 +80,45 @@ router.get('/submissions/:id/pdf', async (req, res) => {
     }
     const drawDivider = () => { ensureSpace(12); doc.moveDown(0.3); doc.moveTo(PAGE.left, doc.y).lineTo(PAGE.right, doc.y).stroke(); doc.moveDown(0.6) }
     
+    // Helper: Selecionar logo apropriada baseada na cor de fundo
+    const getLogoForBackground = (bgColor) => {
+      if (!bgColor) return logos.logo || null
+      
+      const color = bgColor.toLowerCase()
+      
+      // Detectar se é fundo azul
+      if (color.includes('blue') || color.match(/#[0-9a-f]{0,2}[0-9a-f]{2}[0-9a-f]{2}[a-f0-9]{0,2}/) && 
+          parseInt(color.replace('#', '').substring(2, 4), 16) > parseInt(color.replace('#', '').substring(0, 2), 16)) {
+        return logos.logoBlueBg || logos.logo || null
+      }
+      
+      // Detectar se é fundo verde
+      if (color.includes('green') || color.match(/#[0-9a-f]{2}[a-f8-9]{2}[0-9a-f]{2}/) &&
+          parseInt(color.replace('#', '').substring(2, 4), 16) > 100) {
+        return logos.logoGreenBg || logos.logo || null
+      }
+      
+      // Detectar se é fundo preto/escuro
+      if (color.includes('black') || color === '#000000' || color === '#000' ||
+          (color.match(/#[0-9a-f]{6}/) && parseInt(color.replace('#', ''), 16) < 0x333333)) {
+        return logos.logoBlackBg || logos.logo || null
+      }
+      
+      // Padrão: fundo branco (logo colorida)
+      return logos.logoWhiteBg || logos.logo || null
+    }
+    
     // FUNÇÃO UNIVERSAL: Desenhar cabeçalho da empresa em qualquer página
-    const drawCompanyHeader = (pageTitle = '') => {
-      // Fundo verde no topo
+    const drawCompanyHeader = (pageTitle = '', bgColor = null) => {
+      const headerBg = bgColor || company.companyPrimaryColor
+      
+      // Fundo colorido no topo
       doc.save()
-      doc.fillColor(company.companyPrimaryColor).rect(PAGE.left - 40, PAGE.top - 40, 595, 50).fill()
+      doc.fillColor(headerBg).rect(PAGE.left - 40, PAGE.top - 40, 595, 50).fill()
       doc.restore()
+      
+      // Selecionar logo apropriada
+      const logoBuffer = getLogoForBackground(headerBg)
       
       // Logo ou nome da empresa
       if (logoBuffer) {

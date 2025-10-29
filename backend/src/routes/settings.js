@@ -208,6 +208,55 @@ router.put('/company', async (req, res) => {
   }
 })
 
+// Helper para salvar logo
+const saveLogo = async (mimeKey, dataKey, mime, data) => {
+  const [mimeSetting, mimeCreated] = await CompanySetting.findOrCreate({
+    where: { setting_key: mimeKey },
+    defaults: {
+      setting_key: mimeKey,
+      setting_value: mime,
+      setting_type: 'string',
+      description: `Configuração da empresa: ${mimeKey}`,
+      is_public: false
+    }
+  });
+  
+  if (!mimeCreated) {
+    await mimeSetting.update({ setting_value: mime });
+  }
+  
+  const [dataSetting, dataCreated] = await CompanySetting.findOrCreate({
+    where: { setting_key: dataKey },
+    defaults: {
+      setting_key: dataKey,
+      setting_value: data,
+      setting_type: 'json',
+      description: `Configuração da empresa: ${dataKey}`,
+      is_public: false
+    }
+  });
+  
+  if (!dataCreated) {
+    await dataSetting.update({ setting_value: data });
+  }
+};
+
+// Helper para recuperar logo
+const getLogo = async (mimeKey, dataKey) => {
+  const [mimeSetting, dataSetting] = await Promise.all([
+    CompanySetting.findOne({ 
+      where: { setting_key: mimeKey },
+      attributes: ['id', 'setting_key', 'setting_value', 'setting_type', 'description', 'is_public', 'created_at', 'updated_at']
+    }),
+    CompanySetting.findOne({ 
+      where: { setting_key: dataKey },
+      attributes: ['id', 'setting_key', 'setting_value', 'setting_type', 'description', 'is_public', 'created_at', 'updated_at']
+    })
+  ]);
+  
+  return { mimeSetting, dataSetting };
+};
+
 router.post('/company/logo', async (req, res) => {
   try {
     const { fileBase64, filename } = req.body || {}
@@ -215,42 +264,144 @@ router.post('/company/logo', async (req, res) => {
     const mime = (fileBase64.match(/^data:(.*?);base64,/) || [])[1] || 'image/png'
     const data = Buffer.from(fileBase64.split(',').pop(), 'base64')
     
-    // Buscar ou criar configuração para logoMime
-    const [mimeSetting, mimeCreated] = await CompanySetting.findOrCreate({
-      where: { setting_key: 'logoMime' },
-      defaults: {
-        setting_key: 'logoMime',
-        setting_value: mime,
-        setting_type: 'string',
-        description: 'Configuração da empresa: logoMime',
-        is_public: false
-      }
-    });
-    
-    if (!mimeCreated) {
-      await mimeSetting.update({ setting_value: mime });
-    }
-    
-    // Buscar ou criar configuração para logoData
-    const [dataSetting, dataCreated] = await CompanySetting.findOrCreate({
-      where: { setting_key: 'logoData' },
-      defaults: {
-        setting_key: 'logoData',
-        setting_value: data,
-        setting_type: 'json',
-        description: 'Configuração da empresa: logoData',
-        is_public: false
-      }
-    });
-    
-    if (!dataCreated) {
-      await dataSetting.update({ setting_value: data });
-    }
+    await saveLogo('logoMime', 'logoData', mime, data);
     
     return res.json({ success: true })
   } catch (e) {
     console.error('Erro ao salvar logo:', e);
     return res.status(500).json({ error: 'Falha ao salvar logo' })
+  }
+})
+
+router.post('/company/logo/white-bg', async (req, res) => {
+  try {
+    const { fileBase64 } = req.body || {}
+    if (!fileBase64) return res.status(400).json({ error: 'Arquivo (base64) é obrigatório' })
+    const mime = (fileBase64.match(/^data:(.*?);base64,/) || [])[1] || 'image/png'
+    const data = Buffer.from(fileBase64.split(',').pop(), 'base64')
+    
+    await saveLogo('logoWhiteBgMime', 'logoWhiteBgData', mime, data);
+    
+    return res.json({ success: true })
+  } catch (e) {
+    console.error('Erro ao salvar logo:', e);
+    return res.status(500).json({ error: 'Falha ao salvar logo para fundo branco' })
+  }
+})
+
+router.post('/company/logo/blue-bg', async (req, res) => {
+  try {
+    const { fileBase64 } = req.body || {}
+    if (!fileBase64) return res.status(400).json({ error: 'Arquivo (base64) é obrigatório' })
+    const mime = (fileBase64.match(/^data:(.*?);base64,/) || [])[1] || 'image/png'
+    const data = Buffer.from(fileBase64.split(',').pop(), 'base64')
+    
+    await saveLogo('logoBlueBgMime', 'logoBlueBgData', mime, data);
+    
+    return res.json({ success: true })
+  } catch (e) {
+    console.error('Erro ao salvar logo:', e);
+    return res.status(500).json({ error: 'Falha ao salvar logo para fundo azul' })
+  }
+})
+
+router.post('/company/logo/green-bg', async (req, res) => {
+  try {
+    const { fileBase64 } = req.body || {}
+    if (!fileBase64) return res.status(400).json({ error: 'Arquivo (base64) é obrigatório' })
+    const mime = (fileBase64.match(/^data:(.*?);base64,/) || [])[1] || 'image/png'
+    const data = Buffer.from(fileBase64.split(',').pop(), 'base64')
+    
+    await saveLogo('logoGreenBgMime', 'logoGreenBgData', mime, data);
+    
+    return res.json({ success: true })
+  } catch (e) {
+    console.error('Erro ao salvar logo:', e);
+    return res.status(500).json({ error: 'Falha ao salvar logo para fundo verde' })
+  }
+})
+
+router.post('/company/logo/black-bg', async (req, res) => {
+  try {
+    const { fileBase64 } = req.body || {}
+    if (!fileBase64) return res.status(400).json({ error: 'Arquivo (base64) é obrigatório' })
+    const mime = (fileBase64.match(/^data:(.*?);base64,/) || [])[1] || 'image/png'
+    const data = Buffer.from(fileBase64.split(',').pop(), 'base64')
+    
+    await saveLogo('logoBlackBgMime', 'logoBlackBgData', mime, data);
+    
+    return res.json({ success: true })
+  } catch (e) {
+    console.error('Erro ao salvar logo:', e);
+    return res.status(500).json({ error: 'Falha ao salvar logo para fundo preto' })
+  }
+})
+
+router.get('/company/logo/white-bg', async (req, res) => {
+  try {
+    const { mimeSetting, dataSetting } = await getLogo('logoWhiteBgMime', 'logoWhiteBgData');
+    
+    if (!mimeSetting || !dataSetting || !dataSetting.setting_value) {
+      return res.status(404).json({ error: 'Logo não encontrada' });
+    }
+    
+    res.setHeader('Content-Type', mimeSetting.setting_value || 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(dataSetting.setting_value);
+  } catch (error) {
+    console.error('Erro ao buscar logo:', error);
+    return res.status(500).json({ error: 'Erro ao buscar logo' });
+  }
+})
+
+router.get('/company/logo/blue-bg', async (req, res) => {
+  try {
+    const { mimeSetting, dataSetting } = await getLogo('logoBlueBgMime', 'logoBlueBgData');
+    
+    if (!mimeSetting || !dataSetting || !dataSetting.setting_value) {
+      return res.status(404).json({ error: 'Logo não encontrada' });
+    }
+    
+    res.setHeader('Content-Type', mimeSetting.setting_value || 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(dataSetting.setting_value);
+  } catch (error) {
+    console.error('Erro ao buscar logo:', error);
+    return res.status(500).json({ error: 'Erro ao buscar logo' });
+  }
+})
+
+router.get('/company/logo/green-bg', async (req, res) => {
+  try {
+    const { mimeSetting, dataSetting } = await getLogo('logoGreenBgMime', 'logoGreenBgData');
+    
+    if (!mimeSetting || !dataSetting || !dataSetting.setting_value) {
+      return res.status(404).json({ error: 'Logo não encontrada' });
+    }
+    
+    res.setHeader('Content-Type', mimeSetting.setting_value || 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(dataSetting.setting_value);
+  } catch (error) {
+    console.error('Erro ao buscar logo:', error);
+    return res.status(500).json({ error: 'Erro ao buscar logo' });
+  }
+})
+
+router.get('/company/logo/black-bg', async (req, res) => {
+  try {
+    const { mimeSetting, dataSetting } = await getLogo('logoBlackBgMime', 'logoBlackBgData');
+    
+    if (!mimeSetting || !dataSetting || !dataSetting.setting_value) {
+      return res.status(404).json({ error: 'Logo não encontrada' });
+    }
+    
+    res.setHeader('Content-Type', mimeSetting.setting_value || 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    return res.end(dataSetting.setting_value);
+  } catch (error) {
+    console.error('Erro ao buscar logo:', error);
+    return res.status(500).json({ error: 'Erro ao buscar logo' });
   }
 })
 

@@ -36,6 +36,42 @@ const CompanySetting = sequelize.define('CompanySetting', {
     type: DataTypes.BLOB,
     allowNull: true
   },
+  // Logo para fundo branco (logo colorida principal)
+  logoWhiteBgMime: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  logoWhiteBgData: {
+    type: DataTypes.BLOB,
+    allowNull: true
+  },
+  // Logo para fundo azul (negativa/branca)
+  logoBlueBgMime: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  logoBlueBgData: {
+    type: DataTypes.BLOB,
+    allowNull: true
+  },
+  // Logo para fundo verde (negativa/branca)
+  logoGreenBgMime: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  logoGreenBgData: {
+    type: DataTypes.BLOB,
+    allowNull: true
+  },
+  // Logo para fundo preto (negativa/branca)
+  logoBlackBgMime: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  logoBlackBgData: {
+    type: DataTypes.BLOB,
+    allowNull: true
+  },
   created_at: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
